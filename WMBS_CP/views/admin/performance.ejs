@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - WMBS</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="sidebar-icon">W</div>
+          <span>WMBS Admin</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/admin"><span class="sidebar-icon">🏠</span><span>Dashboard</span></a>
+        <a href="/admin/collectors"><span class="sidebar-icon">🚛</span><span>Collectors</span></a>
+        <a href="/admin/requests"><span class="sidebar-icon">📥</span><span>Requests</span></a>
+        <a href="/admin/revenue"><span class="sidebar-icon">💳</span><span>Revenue</span></a>
+        <a href="/admin/customers"><span class="sidebar-icon">👥</span><span>Customers</span></a>
+        <a href="/admin/performance"><span class="sidebar-icon">📈</span><span>Performance</span></a>
+        <a href="/auth/logout"><span class="sidebar-icon">⏏</span><span>Logout</span></a>
+      </nav>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="sidebarToggle" class="icon-button" type="button">☰</button>
+          <div>
+            <div class="topbar-title">Collector Performance</div>
+            <div class="text-muted">Completion rates by collector</div>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button id="darkToggle" class="icon-button" type="button">🌙</button>
+        </div>
+      </header>
+
+      <main class="dashboard-main">
+        <h1>Collector Performance</h1>
+        <div class="card">
+          <table class="data-table">
+            <thead><tr><th>Collector</th><th>Completed</th><th>Total assigned</th><th>Completion rate</th></tr></thead>
+            <tbody>
+              <% if (stats && stats.length) { stats.forEach(s => { %>
+                <tr><td><%= s.collector.User ? s.collector.User.name : s.collector.id %></td><td><%= s.completed %></td><td><%= s.total %></td><td><%= s.rate %>%</td></tr>
+              <% }); } else { %><tr><td colspan="4">No data</td></tr><% } %>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/dashboard-ui.js"></script>
+</body>
+</html>

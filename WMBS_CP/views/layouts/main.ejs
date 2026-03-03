@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title : 'WMBS' %> - <%= typeof appName !== 'undefined' ? appName : 'WMBS' %></title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="<%= typeof bodyClass !== 'undefined' ? bodyClass : '' %>" data-theme="<%= typeof darkMode !== 'undefined' && darkMode ? 'dark' : 'light' %>">
+  <header class="dashboard-header">
+    <div class="header-brand"><%= typeof appName !== 'undefined' ? appName : 'WMBS' %></div>
+    <nav class="header-nav">
+      <%- typeof navItems !== 'undefined' ? navItems : '' %>
+      <a href="/auth/logout" class="nav-link">Logout</a>
+    </nav>
+  </header>
+  <main class="dashboard-main">
+    <%- body %>
+  </main>
+  <script src="/js/common.js"></script>
+  <%- typeof scripts !== 'undefined' ? scripts : '' %>
+</body>
+</html>

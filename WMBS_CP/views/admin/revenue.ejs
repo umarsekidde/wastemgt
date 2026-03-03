@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - WMBS</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="sidebar-icon">W</div>
+          <span>WMBS Admin</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/admin"><span class="sidebar-icon">🏠</span><span>Dashboard</span></a>
+        <a href="/admin/collectors"><span class="sidebar-icon">🚛</span><span>Collectors</span></a>
+        <a href="/admin/requests"><span class="sidebar-icon">📥</span><span>Requests</span></a>
+        <a href="/admin/revenue"><span class="sidebar-icon">💳</span><span>Revenue</span></a>
+        <a href="/admin/customers"><span class="sidebar-icon">👥</span><span>Customers</span></a>
+        <a href="/admin/performance"><span class="sidebar-icon">📈</span><span>Performance</span></a>
+        <a href="/auth/logout"><span class="sidebar-icon">⏏</span><span>Logout</span></a>
+      </nav>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="sidebarToggle" class="icon-button" type="button">☰</button>
+          <div>
+            <div class="topbar-title">Revenue & Reconciliation</div>
+            <div class="text-muted">Track payments and invoices</div>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button id="darkToggle" class="icon-button" type="button">🌙</button>
+        </div>
+      </header>
+
+      <main class="dashboard-main">
+        <h1>Revenue & Reconciliation</h1>
+        <div class="card">
+          <table class="data-table">
+            <thead><tr><th>Date</th><th>Customer</th><th>Amount</th><th>Status</th><th>Invoice</th><th>Action</th></tr></thead>
+            <tbody>
+              <% if (payments && payments.length) { payments.forEach(p => { %>
+                <tr>
+                  <td><%= p.created_at ? new Date(p.created_at).toISOString().split('T')[0] : '-' %></td>
+                  <td><%= p.User ? p.User.name : '-' %></td>
+                  <td><%= p.amount %> UGX</td>
+                  <td><%= p.status %></td>
+                  <td><%= p.invoice_number || '-' %></td>
+                  <td><a href="/admin/invoice/<%= p.id %>" class="btn btn-sm btn-secondary">Download PDF</a></td>
+                </tr>
+              <% }); } else { %><tr><td colspan="6">No payments</td></tr><% } %>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/dashboard-ui.js"></script>
+</body>
+</html>

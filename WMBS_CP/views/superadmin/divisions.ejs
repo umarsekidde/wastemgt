@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - WMBS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="sidebar-icon">W</div>
+          <span>WMBS Super Admin</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/superadmin"><span class="sidebar-icon">🏠</span><span>Dashboard</span></a>
+        <a href="/superadmin/divisions"><span class="sidebar-icon">🗺</span><span>Areas</span></a>
+        <a href="/superadmin/companies"><span class="sidebar-icon">🏢</span><span>Divisions</span></a>
+        <a href="/superadmin/admins"><span class="sidebar-icon">👤</span><span>Admins & Collectors</span></a>
+        <a href="/superadmin/customers"><span class="sidebar-icon">👥</span><span>Customers</span></a>
+        <a href="/superadmin/broadcast"><span class="sidebar-icon">📣</span><span>Broadcast</span></a>
+        <a href="/superadmin/audit-logs"><span class="sidebar-icon">🔍</span><span>Audit Logs</span></a>
+        <a href="/superadmin/settings"><span class="sidebar-icon">⚙</span><span>Settings</span></a>
+        <a href="/auth/logout"><span class="sidebar-icon">⏏</span><span>Logout</span></a>
+      </nav>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="sidebarToggle" class="icon-button" type="button">☰</button>
+          <div>
+            <div class="topbar-title">Manage Areas</div>
+            <div class="text-muted">Top-level service regions</div>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button id="darkToggle" class="icon-button" type="button">🌙</button>
+        </div>
+      </header>
+      <main class="dashboard-main">
+    <h1>Manage Areas</h1>
+    <form method="post" action="/superadmin/divisions" class="form-inline" style="margin-bottom:20px">
+      <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+      <input type="text" name="name" placeholder="Area name" required class="form-control">
+      <input type="text" name="code" placeholder="Code" class="form-control">
+      <button type="submit" class="btn btn-primary">Add Area</button>
+    </form>
+    <div class="card">
+      <table>
+        <thead><tr><th>ID</th><th>Name</th><th>Code</th><th>Active</th></tr></thead>
+        <tbody>
+          <% if (divisions && divisions.length) { divisions.forEach(d => { %>
+            <tr><td><%= d.id %></td><td><%= d.name %></td><td><%= d.code || '-' %></td><td><%= d.is_active ? 'Yes' : 'No' %></td></tr>
+          <% }); } else { %><tr><td colspan="4">No areas</td></tr><% } %>
+        </tbody>
+      </table>
+    </div>
+      </main>
+    </div>
+  </div>
+  <script src="/js/common.js"></script>
+  <script src="/js/dashboard-ui.js"></script>
+</body>
+</html>

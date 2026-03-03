@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - WMBS</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="sidebar-icon">W</div>
+          <span>WMBS Admin</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/admin"><span class="sidebar-icon">🏠</span><span>Dashboard</span></a>
+        <a href="/admin/collectors"><span class="sidebar-icon">🚛</span><span>Collectors</span></a>
+        <a href="/admin/requests"><span class="sidebar-icon">📥</span><span>Requests</span></a>
+        <a href="/admin/revenue"><span class="sidebar-icon">💳</span><span>Revenue</span></a>
+        <a href="/admin/customers"><span class="sidebar-icon">👥</span><span>Customers</span></a>
+        <a href="/admin/performance"><span class="sidebar-icon">📈</span><span>Performance</span></a>
+        <a href="/auth/logout"><span class="sidebar-icon">⏏</span><span>Logout</span></a>
+      </nav>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="sidebarToggle" class="icon-button" type="button">☰</button>
+          <div>
+            <div class="topbar-title">Collection Requests</div>
+            <div class="text-muted">Assign and manage pickups</div>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button id="darkToggle" class="icon-button" type="button">🌙</button>
+        </div>
+      </header>
+
+      <main class="dashboard-main">
+        <h1>Collection Requests</h1>
+        <input type="hidden" id="csrfToken" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+        <div class="card">
+          <table class="data-table">
+            <thead><tr><th>ID</th><th>Customer</th><th>Address</th><th>Date</th><th>Status</th><th>Collector</th><th>Action</th></tr></thead>
+            <tbody>
+              <% if (requests && requests.length) { requests.forEach(r => { %>
+                <tr data-request-id="<%= r.id %>">
+                  <td><%= r.id %></td>
+                  <td><%= r.User ? r.User.name : '-' %></td>
+                  <td><%= r.address %></td>
+                  <td><%= r.scheduled_date || '-' %></td>
+                  <td><%= r.status %></td>
+                  <td><%= r.Collector && r.Collector.User ? r.Collector.User.name : '-' %></td>
+                  <td>
+                    <% if (r.status === 'pending' && collectors && collectors.length) { %>
+                      <select class="assign-collector form-control" style="width:150px">
+                        <option value="">Assign...</option>
+                        <% collectors.forEach(c => { %><option value="<%= c.id %>"><%= c.User ? c.User.name : c.id %></option><% }); %>
+                      </select>
+                      <button type="button" class="btn btn-sm btn-primary assign-btn">Assign</button>
+                    <% } else { %>
+                      <span>-</span>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }); } else { %><tr><td colspan="7">No requests</td></tr><% } %>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script>
+    document.querySelectorAll('.assign-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const row = this.closest('tr');
+        const requestId = row.dataset.requestId;
+        const select = row.querySelector('.assign-collector');
+        const collectorId = select && select.value;
+        if (!collectorId) return alert('Select a collector');
+        const csrf = document.getElementById('csrfToken').value;
+fetch('/admin/assign-collector', { method: 'POST', headers: { 'Content-Type': 'application/json', 'csrf-token': csrf }, body: JSON.stringify({ requestId: parseInt(requestId, 10), collectorId: parseInt(collectorId, 10), _csrf: csrf }) })
+          .then(r => r.json()).then(d => { if (d.success) location.reload(); else alert(d.message || 'Failed'); }).catch(() => alert('Failed'));
+      });
+    });
+  </script>
+  <script src="/js/common.js"></script>
+  <script src="/js/dashboard-ui.js"></script>
+</body>
+</html>

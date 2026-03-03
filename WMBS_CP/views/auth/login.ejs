@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - WMBS</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="auth-page">
+  <div class="auth-card">
+    <h1>WMBS Login</h1>
+    <p class="auth-muted" style="font-size:0.9rem; color:var(--secondary); margin-bottom:1rem;">Use your email and password. Admins and collectors: use the credentials given to you by your Super Admin.</p>
+    <% if (typeof error === 'string' && error) { %><p class="auth-error"><%= error %></p><% } %>
+    <% if (typeof query !== 'undefined' && query && query.registered) { %><p class="auth-success">Registration successful. Please log in.</p><% } %>
+    <% if (typeof query !== 'undefined' && query && query.reset) { %><p class="auth-success">Password reset. Please log in.</p><% } %>
+    <form id="login-form" method="post" action="/auth/login" class="auth-form">
+      <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+      <label>Email</label>
+      <input type="email" name="email" required autocomplete="email">
+      <label>Password</label>
+      <div class="password-wrap">
+        <input type="password" id="login-password" name="password" required autocomplete="current-password">
+        <label class="password-toggle"><input type="checkbox" data-toggle-password="login-password"> Show password</label>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Login</button>
+    </form>
+    <p class="auth-links">
+      <a href="/auth/forgot-password">Forgot password?</a> | <a href="/auth/register">Register</a>
+    </p>
+  </div>
+  <script src="/js/common.js"></script>
+</body>
+</html>

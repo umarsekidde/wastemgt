@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - WMBS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="sidebar-icon">W</div>
+          <span>WMBS Customer</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/customer"><span class="sidebar-icon">🏠</span><span>Dashboard</span></a>
+        <a href="/customer/notifications"><span class="sidebar-icon">🔔</span><span>Notifications</span></a>
+        <a href="/customer/payment-history"><span class="sidebar-icon">💳</span><span>Payments</span></a>
+        <a href="/customer/complaints"><span class="sidebar-icon">✉</span><span>Complaints</span></a>
+        <a href="/auth/logout"><span class="sidebar-icon">⏏</span><span>Logout</span></a>
+      </nav>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="sidebarToggle" class="icon-button" type="button">☰</button>
+          <div>
+            <div class="topbar-title">Notifications</div>
+            <div class="text-muted">Updates about your requests and payments</div>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button id="darkToggle" class="icon-button" type="button">🌙</button>
+        </div>
+      </header>
+      <main class="dashboard-main">
+        <h1>Notifications</h1>
+        <div class="card">
+          <ul class="notification-list">
+            <% if (notifications && notifications.length) { notifications.forEach(function(n) { %>
+              <li class="<%= n.read_status ? '' : 'unread' %>"><strong><%= n.title || 'Notification' %></strong><br><%= n.message %><br><small><%= n.created_at ? new Date(n.created_at).toLocaleString() : '' %></small></li>
+            <% }); } else { %><li>No notifications</li><% } %>
+          </ul>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="/js/common.js"></script>
+  <script src="/js/dashboard-ui.js"></script>
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - WMBS</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="sidebar-icon">W</div>
+          <span>WMBS Admin</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/admin"><span class="sidebar-icon">🏠</span><span>Dashboard</span></a>
+        <a href="/admin/collectors"><span class="sidebar-icon">🚛</span><span>Collectors</span></a>
+        <a href="/admin/requests"><span class="sidebar-icon">📥</span><span>Requests</span></a>
+        <a href="/admin/revenue"><span class="sidebar-icon">💳</span><span>Revenue</span></a>
+        <a href="/admin/customers"><span class="sidebar-icon">👥</span><span>Customers</span></a>
+        <a href="/admin/performance"><span class="sidebar-icon">📈</span><span>Performance</span></a>
+        <a href="/auth/logout"><span class="sidebar-icon">⏏</span><span>Logout</span></a>
+      </nav>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="sidebarToggle" class="icon-button" type="button">☰</button>
+          <div>
+            <div class="topbar-title"><%= company ? company.name : 'Division Admin' %></div>
+            <div class="text-muted">Manage collectors for your division</div>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button id="darkToggle" class="icon-button" type="button">🌙</button>
+          <div class="user-pill">
+            <div class="user-pill-avatar"></div>
+            <span>Admin</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="dashboard-main">
+        <h1>Collectors</h1>
+
+        <section class="dashboard-section section-row">
+          <div class="card" style="max-width: 420px;">
+            <h2>Add collector</h2>
+            <p class="text-muted">Create a new truck/collector account for your company.</p>
+            <form method="post" action="/admin/collectors" class="auth-form" style="margin-top: 0.75rem;">
+              <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+              <label for="collector-name">Name</label>
+              <input id="collector-name" type="text" name="name" placeholder="Name" required class="form-control">
+
+              <label for="collector-email">Email</label>
+              <input id="collector-email" type="email" name="email" placeholder="Email" required class="form-control">
+
+              <label for="collector-password">Password</label>
+              <div class="password-wrap">
+                <input type="password" id="collector-password" name="password" placeholder="Password" required class="form-control">
+                <label class="password-toggle">
+                  <input type="checkbox" data-toggle-password="collector-password"> Show password
+                </label>
+              </div>
+
+              <label for="collector-truck">Truck number (optional)</label>
+              <input id="collector-truck" type="text" name="truck_number" placeholder="e.g. UAA 123A" class="form-control">
+
+              <button type="submit" class="btn btn-primary btn-block" style="margin-top: 1rem;">Add collector</button>
+            </form>
+          </div>
+
+          <div class="card">
+            <h2>Existing collectors</h2>
+            <p class="text-muted">Active collectors mapped to your company.</p>
+            <div style="margin-top: 0.75rem;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Truck</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% if (collectors && collectors.length) { collectors.forEach(function(c) { %>
+                    <tr>
+                      <td><%= c.id %></td>
+                      <td><%= c.User ? c.User.name : '-' %></td>
+                      <td><%= c.User ? c.User.email : '-' %></td>
+                      <td><%= c.User ? c.User.phone : '-' %></td>
+                      <td><%= c.truck_number || '-' %></td>
+                      <td><%= c.status %></td>
+                    </tr>
+                  <% }); } else { %>
+                    <tr><td colspan="6">No collectors</td></tr>
+                  <% } %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/common.js"></script>
+</body>
+</html>

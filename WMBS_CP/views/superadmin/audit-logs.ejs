@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - WMBS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="sidebar-icon">W</div>
+          <span>WMBS Super Admin</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/superadmin"><span class="sidebar-icon">🏠</span><span>Dashboard</span></a>
+        <a href="/superadmin/divisions"><span class="sidebar-icon">🗺</span><span>Areas</span></a>
+        <a href="/superadmin/companies"><span class="sidebar-icon">🏢</span><span>Divisions</span></a>
+        <a href="/superadmin/admins"><span class="sidebar-icon">👤</span><span>Admins & Collectors</span></a>
+        <a href="/superadmin/customers"><span class="sidebar-icon">👥</span><span>Customers</span></a>
+        <a href="/superadmin/broadcast"><span class="sidebar-icon">📣</span><span>Broadcast</span></a>
+        <a href="/superadmin/audit-logs"><span class="sidebar-icon">🔍</span><span>Audit Logs</span></a>
+        <a href="/superadmin/settings"><span class="sidebar-icon">⚙</span><span>Settings</span></a>
+        <a href="/auth/logout"><span class="sidebar-icon">⏏</span><span>Logout</span></a>
+      </nav>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="sidebarToggle" class="icon-button" type="button">☰</button>
+          <div>
+            <div class="topbar-title">Audit Logs</div>
+            <div class="text-muted">Trace every critical action in the system</div>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button id="darkToggle" class="icon-button" type="button">🌙</button>
+        </div>
+      </header>
+      <main class="dashboard-main">
+    <h1>Audit Logs</h1>
+    <div class="card">
+    <table>
+      <thead><tr><th>Time</th><th>Action</th><th>User</th><th>IP</th></tr></thead>
+      <tbody>
+        <% if (logs && logs.length) { logs.forEach(log => { %>
+          <tr>
+            <td><%= log.created_at ? new Date(log.created_at).toLocaleString() : '-' %></td>
+            <td><%= log.action %></td>
+            <td><%= log.User ? log.User.name : log.performed_by %></td>
+            <td><%= log.ip_address || '-' %></td>
+          </tr>
+        <% }); } else { %><tr><td colspan="4">No logs</td></tr><% } %>
+      </tbody>
+    </table>
+    </div>
+    <% if (totalPages > 1) { %>
+      <p>Page <%= page %> of <%= totalPages %>. <a href="?page=<%= page - 1 %>">Prev</a> <a href="?page=<%= page + 1 %>">Next</a></p>
+    <% } %>
+      </main>
+    </div>
+  </div>
+  <script src="/js/common.js"></script>
+  <script src="/js/dashboard-ui.js"></script>
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - WMBS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="sidebar-icon">W</div>
+          <span>WMBS Super Admin</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/superadmin"><span class="sidebar-icon">🏠</span><span>Dashboard</span></a>
+        <a href="/superadmin/divisions"><span class="sidebar-icon">🗺</span><span>Areas</span></a>
+        <a href="/superadmin/companies"><span class="sidebar-icon">🏢</span><span>Divisions</span></a>
+        <a href="/superadmin/admins"><span class="sidebar-icon">👤</span><span>Admins & Collectors</span></a>
+        <a href="/superadmin/customers"><span class="sidebar-icon">👥</span><span>Customers</span></a>
+        <a href="/superadmin/broadcast"><span class="sidebar-icon">📣</span><span>Broadcast</span></a>
+        <a href="/superadmin/audit-logs"><span class="sidebar-icon">🔍</span><span>Audit Logs</span></a>
+        <a href="/superadmin/settings"><span class="sidebar-icon">⚙</span><span>Settings</span></a>
+        <a href="/auth/logout"><span class="sidebar-icon">⏏</span><span>Logout</span></a>
+      </nav>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="sidebarToggle" class="icon-button" type="button">☰</button>
+          <div>
+            <div class="topbar-title">Admins & Collectors</div>
+            <div class="text-muted">Manage access and collection teams</div>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button id="darkToggle" class="icon-button" type="button">🌙</button>
+        </div>
+      </header>
+      <main class="dashboard-main">
+    <h1>Admins & Collectors</h1>
+    <% if (typeof query !== 'undefined' && query && query.success) { %>
+      <p class="auth-success">User created successfully. They can log in with the email and password you set.</p>
+    <% } %>
+    <% if (typeof query !== 'undefined' && query && query.error === 'company_required') { %>
+      <p class="auth-error">Select a division. Every Admin and Collector must be under a specific division.</p>
+    <% } %>
+    <% if (typeof query !== 'undefined' && query && query.error === 'select_role') { %>
+      <p class="auth-error">Please select a role (Admin or Collector).</p>
+    <% } %>
+    <% if (typeof query !== 'undefined' && query && query.error === 'email_exists') { %>
+      <p class="auth-error">That email is already registered. Use a different email.</p>
+    <% } %>
+    <% if (typeof query !== 'undefined' && query && query.error === 'create_failed') { %>
+      <p class="auth-error">Could not create user. Please try again.</p>
+    <% } %>
+    <% if (typeof query !== 'undefined' && query && query.error === 'password_short') { %>
+      <p class="auth-error">Password must be at least 8 characters.</p>
+    <% } %>
+    <form id="add-user-form" method="post" action="/superadmin/admins" class="card" style="max-width:520px;margin-bottom:20px" autocomplete="off">
+      <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+      <input type="hidden" name="division_id" id="division_id_submit" value="">
+      <label for="admin-name">Name</label>
+      <input type="text" id="admin-name" name="name" value="" required class="form-control" autocomplete="off">
+      <label for="admin-email">Email</label>
+      <input type="email" id="admin-email" name="email" value="" required class="form-control" autocomplete="off">
+      <label for="admin-password">Password</label>
+      <div class="password-wrap">
+        <input type="password" id="admin-password" name="password" value="" required class="form-control" autocomplete="new-password">
+        <label class="password-toggle"><input type="checkbox" data-toggle-password="admin-password"> Show password</label>
+      </div>
+      <label for="admin-role">Role</label>
+      <select id="admin-role" name="role" class="form-control" required>
+        <option value="">Select role</option>
+        <option value="admin">Admin</option>
+        <option value="collector">Collector</option>
+      </select>
+      <div id="company-fields" style="display:none; margin-top:0.75rem;">
+        <label for="admin-company">Division (required)</label>
+        <select id="admin-company" class="form-control" aria-label="Division">
+          <option value="">Select division</option>
+          <% if (typeof divisions !== 'undefined' && divisions && divisions.length) { divisions.forEach(function(d) { %>
+            <option value="<%= d.id %>"><%= d.name %></option>
+          <% }); } %>
+        </select>
+        <% if (typeof divisions !== 'undefined' && (!divisions || divisions.length === 0)) { %>
+          <p class="auth-error" style="margin-top:0.5rem; font-size:0.9rem;">No divisions in the system yet. <a href="/superadmin/divisions">Add areas</a> and <a href="/superadmin/companies">add a division</a> for each area first.</p>
+        <% } %>
+        <% if (typeof query !== 'undefined' && query && query.error === 'division_no_company') { %>
+          <p class="auth-error" style="margin-top:0.5rem; font-size:0.9rem;">No division set up for this area yet. <a href="/superadmin/companies">Add a division</a> for this area under Manage Divisions first.</p>
+        <% } %>
+        <div id="collector-truck-field" style="display:none; margin-top:0.75rem;">
+          <label for="admin-truck">Truck number (optional)</label>
+          <input type="text" id="admin-truck" name="truck_number" value="" class="form-control" autocomplete="off">
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="margin-top:1rem;">Add user</button>
+    </form>
+    <div class="card">
+      <table>
+        <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Division</th></tr></thead>
+        <tbody>
+          <% if (admins && admins.length) { admins.forEach(function(a) { %>
+            <tr>
+              <td><%= a.name %></td>
+              <td><%= a.email %></td>
+              <td><%= a.role %></td>
+              <td><%= a.role === 'collector' && a.Collector && a.Collector.Company ? a.Collector.Company.name : (a.role === 'admin' && a.AdminOfCompany ? a.AdminOfCompany.name : (a.Division ? a.Division.name : '-')) %></td>
+            </tr>
+          <% }); } else { %><tr><td colspan="4">No users yet</td></tr><% } %>
+        </tbody>
+      </table>
+    </div>
+      </main>
+    </div>
+  </div>
+  <script src="/js/common.js"></script>
+  <script src="/js/dashboard-ui.js"></script>
+  <script>
+    (function() {
+      var form = document.getElementById('add-user-form');
+      var roleSelect = document.getElementById('admin-role');
+      var companyFields = document.getElementById('company-fields');
+      var collectorTruckField = document.getElementById('collector-truck-field');
+      var companySelect = document.getElementById('admin-company');
+      if (roleSelect && companyFields) {
+        function toggleCompanyFields() {
+          var hid = document.getElementById('division_id_submit');
+          if (roleSelect.value === 'admin' || roleSelect.value === 'collector') {
+            companyFields.style.display = 'block';
+            companySelect.setAttribute('required', 'required');
+            if (hid) hid.value = companySelect.value || '';
+            if (roleSelect.value === 'collector') {
+              collectorTruckField.style.display = 'block';
+            } else {
+              collectorTruckField.style.display = 'none';
+              var t = document.getElementById('admin-truck');
+              if (t) t.value = '';
+            }
+          } else {
+            companyFields.style.display = 'none';
+            companySelect.removeAttribute('required');
+            companySelect.value = '';
+            if (hid) hid.value = '';
+            collectorTruckField.style.display = 'none';
+          }
+        }
+        roleSelect.addEventListener('change', toggleCompanyFields);
+      }
+      if (companySelect) {
+        companySelect.addEventListener('change', function() {
+          var hid = document.getElementById('division_id_submit');
+          if (hid) hid.value = this.value || '';
+        });
+      }
+      if (form) {
+        form.addEventListener('submit', function(e) {
+          var role = roleSelect && roleSelect.value;
+          if (role === 'admin' || role === 'collector') {
+            var divVal = companySelect && companySelect.value;
+            if (!divVal) {
+              e.preventDefault();
+              alert('Please select a division for this ' + (role === 'admin' ? 'admin' : 'collector') + '.');
+              return false;
+            }
+            var hid = document.getElementById('division_id_submit');
+            if (hid) hid.value = divVal;
+          } else {
+            var hid = document.getElementById('division_id_submit');
+            if (hid) hid.value = '';
+          }
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - WMBS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="sidebar-icon">W</div>
+          <span>WMBS Super Admin</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/superadmin"><span class="sidebar-icon">🏠</span><span>Dashboard</span></a>
+        <a href="/superadmin/divisions"><span class="sidebar-icon">🗺</span><span>Areas</span></a>
+        <a href="/superadmin/companies"><span class="sidebar-icon">🏢</span><span>Divisions</span></a>
+        <a href="/superadmin/admins"><span class="sidebar-icon">👤</span><span>Admins & Collectors</span></a>
+        <a href="/superadmin/customers"><span class="sidebar-icon">👥</span><span>Customers</span></a>
+        <a href="/superadmin/broadcast"><span class="sidebar-icon">📣</span><span>Broadcast</span></a>
+        <a href="/superadmin/audit-logs"><span class="sidebar-icon">🔍</span><span>Audit Logs</span></a>
+        <a href="/superadmin/settings"><span class="sidebar-icon">⚙</span><span>Settings</span></a>
+        <a href="/auth/logout"><span class="sidebar-icon">⏏</span><span>Logout</span></a>
+      </nav>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="sidebarToggle" class="icon-button" type="button">☰</button>
+          <div>
+            <div class="topbar-title">System Settings</div>
+            <div class="text-muted">Theme and platform health</div>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button id="darkToggle" class="icon-button" type="button">🌙</button>
+        </div>
+      </header>
+
+      <main class="dashboard-main">
+        <h1>System Settings</h1>
+        <section class="section-row dashboard-section">
+          <div class="card">
+            <h2>Appearance</h2>
+            <p class="text-muted">Switch between light and dark mode for all dashboards.</p>
+            <button type="button" id="darkToggleSettings" class="btn btn-primary">Toggle dark mode</button>
+          </div>
+          <div class="card">
+            <h2>System health</h2>
+            <p>Overall status: <span class="badge badge-success">OK</span></p>
+            <p class="text-muted" style="margin-top:8px;">No issues detected in the last 24 hours.</p>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/dashboard-ui.js"></script>
+  <script>
+    // Make settings button reuse the global dark-mode toggle
+    (function() {
+      var btn = document.getElementById('darkToggleSettings');
+      if (btn) {
+        btn.addEventListener('click', function() {
+          if (window.document.getElementById('darkToggle')) {
+            document.getElementById('darkToggle').click();
+          } else {
+            document.body.classList.toggle('dark-mode');
+          }
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

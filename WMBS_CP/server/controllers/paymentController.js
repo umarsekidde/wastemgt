@@ -1,0 +1,86 @@
+const db = require('../models');
+const { v4: uuidv4 } = require('uuid');
+const flutterwaveService = require('../services/flutterwaveService');
+const emailService = require('../services/emailService');
+
+function generateInvoiceNumber() {
+  return 'INV-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8).toUpperCase();
+}
+
+exports.initializePayment = async (req, res) => {
+  try {
+    if (!flutterwaveService.isPaymentConfigured()) {
+      return res.status(503).json({ success: false, message: flutterwaveService.NOT_CONFIGURED_MESSAGE });
+    }
+
+    const { request_id, amount, phone } = req.body;
+    const wasteRequest = await db.WasteRequest.findOne({ where: { id: request_id, customer_id: req.user.id } });
+    if (!wasteRequest) return res.status(404).json({ success: false, message: 'Request not found' });
+
+    const amt = parseFloat(amount) || parseFloat(wasteRequest.amount) || 0;
+    if (amt <= 0) return res.status(400).json({ success: false, message: 'Invalid amount' });
+
+    const existingPending = await db.Payment.findOne({ where: { request_id, user_id: req.user.id, status: 'pending' } });
+    if (existingPending) {
+      const init = await flutterwaveService.initializePayment({
+        tx_ref: existingPending.flutterwave_tx_id || existingPending.id + '-' + Date.now(),
+        amount: amt,
+        customer: { email: req.user.email, name: req.user.name, phone: req.user.phone || phone },
+        meta: { request_id, user_id: req.user.id, payment_id: existingPending.id }
+      });
+      return res.json({ success: true, link: init.link, paymentId: existingPending.id });
+    }
+
+    const invoiceNumber = generateInvoiceNumber();
+    const payment = await db.Payment.create({
+      user_id: req.user.id,
+      request_id,
+      amount: amt,
+      status: 'pending',
+      invoice_number: invoiceNumber,
+      payment_method: 'mobilemoneyuganda'
+    });
+
+    const txRef = payment.id + '-' + uuidv4().slice(0, 8);
+    const init = await flutterwaveService.initializePayment({
+      tx_ref: txRef,
+      amount: amt,
+      customer: { email: req.user.email, name: req.user.name, phone: req.user.phone || phone },
+      meta: { request_id, user_id: req.user.id, payment_id: payment.id }
+    });
+
+    payment.flutterwave_tx_id = txRef;
+    await payment.save();
+
+    res.json({ success: true, link: init.link, paymentId: payment.id });
+  } catch (err) {
+    if (err.message !== flutterwaveService.NOT_CONFIGURED_MESSAGE) {
+      console.error(err);
+    }
+    res.status(400).json({ success: false, message: err.message || 'Failed to initialize payment' });
+  }
+};
+
+exports.verifyPayment = async (req, res) => {
+  try {
+    const { transaction_id } = req.query;
+    if (!transaction_id) return res.status(400).json({ success: false, message: 'transaction_id required' });
+    const data = await flutterwaveService.verifyTransaction(transaction_id);
+    const payment = await db.Payment.findOne({
+      where: { flutterwave_tx_id: data.tx_ref, user_id: req.user.id }
+    });
+    if (!payment) return res.status(404).json({ success: false, message: 'Payment not found' });
+    if (data.status === 'successful') {
+      payment.status = 'success';
+      await payment.save();
+      await emailService.sendPaymentSuccess(req.user.email, payment.amount, payment.invoice_number).catch(() => {});
+    } else {
+      payment.status = 'failed';
+      await payment.save();
+    }
+    res.redirect('/customer?payment=' + (data.status === 'successful' ? 'success' : 'failed'));
+  } catch (err) {
+    console.error(err);
+    res.redirect('/customer?payment=failed');
+  }
+};

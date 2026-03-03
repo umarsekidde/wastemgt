@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - WMBS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <svg width="180" height="60" viewBox="0 0 500 150" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="75" cy="75" r="60" fill="#1DB954"/>
+            <path d="M75 35 L95 75 L75 115 L55 75 Z" fill="#0F4C81"/>
+            <text x="160" y="85" font-family="Inter" font-size="48" fill="#0F4C81" font-weight="600">
+              WMBS
+            </text>
+            <text x="160" y="115" font-family="Inter" font-size="20" fill="#6B7280">
+              Waste Management &amp; Billing System
+            </text>
+          </svg>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/superadmin"><span class="sidebar-icon">🏠</span><span>Dashboard</span></a>
+        <a href="/superadmin/divisions"><span class="sidebar-icon">🗺</span><span>Areas</span></a>
+        <a href="/superadmin/companies"><span class="sidebar-icon">🏢</span><span>Divisions</span></a>
+        <a href="/superadmin/admins"><span class="sidebar-icon">👤</span><span>Admins & Collectors</span></a>
+        <a href="/superadmin/customers"><span class="sidebar-icon">👥</span><span>Customers</span></a>
+        <a href="/superadmin/broadcast"><span class="sidebar-icon">📣</span><span>Broadcast</span></a>
+        <a href="/superadmin/audit-logs"><span class="sidebar-icon">🔍</span><span>Audit Logs</span></a>
+        <a href="/superadmin/settings"><span class="sidebar-icon">⚙</span><span>Settings</span></a>
+        <a href="/auth/logout"><span class="sidebar-icon">⏏</span><span>Logout</span></a>
+      </nav>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="sidebarToggle" class="icon-button" type="button">☰</button>
+          <div>
+            <div class="topbar-title">Super Admin Overview</div>
+            <div class="text-muted">Waste Management & Billing System</div>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button id="darkToggle" class="icon-button" type="button">🌙</button>
+          <div class="user-pill">
+            <div class="user-pill-avatar"></div>
+            <span>Super Admin</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="dashboard-main">
+        <h1>Super Admin Dashboard</h1>
+
+        <section class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">Total Users</div>
+            <div class="kpi-value" data-countup="<%= userCount || 0 %>">0</div>
+            <div class="kpi-trend text-muted">All roles across the platform</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Active Divisions</div>
+            <div class="kpi-value" data-countup="<%= companyCount || 0 %>">0</div>
+            <div class="kpi-trend text-muted">Areas with service providers</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Revenue Months</div>
+            <div class="kpi-value" data-countup="<%= Object.keys(monthlyRevenue || {}).length || 0 %>">0</div>
+            <div class="kpi-trend text-muted">Tracked billing history</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Live Trucks</div>
+            <div class="kpi-value" data-countup="<%= trucks ? trucks.length || 0 : 0 %>">0</div>
+            <div class="kpi-trend text-muted">Reporting GPS now</div>
+          </div>
+        </section>
+
+        <section class="section-row dashboard-section">
+          <div class="card">
+            <h2>Monthly Revenue</h2>
+            <p class="text-muted">Platform-wide collections over time</p>
+            <canvas id="revenueChart" height="160"></canvas>
+          </div>
+          <div class="card map-card">
+            <h2>Live Collector Tracking</h2>
+            <p class="text-muted">Monitor movement across all divisions</p>
+            <select id="divisionFilter" class="form-control" style="max-width:220px;margin-bottom:10px">
+              <option value="">All areas</option>
+              <% if (divisions && divisions.length) { divisions.forEach(d => { %>
+                <option value="<%= d.id %>"><%= d.name %></option>
+              <% }); } %>
+            </select>
+            <div id="map"></div>
+            <p id="lastUpdate" class="text-muted"></p>
+            <p id="mapError" class="auth-error" style="display:none;"></p>
+          </div>
+        </section>
+
+        <section class="dashboard-section">
+          <h2>Recent Audit Logs</h2>
+          <div class="card">
+            <table>
+              <thead><tr><th>Time</th><th>Action</th><th>User</th></tr></thead>
+              <tbody>
+                <% if (recentLogs && recentLogs.length) { recentLogs.forEach(log => { %>
+                  <tr>
+                    <td><%= log.created_at ? new Date(log.created_at).toLocaleString() : '-' %></td>
+                    <td><%= log.action %></td>
+                    <td><%= log.User ? log.User.name : log.performed_by %></td>
+                  </tr>
+                <% }); } else { %><tr><td colspan="3">No logs</td></tr><% } %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="dashboard-section">
+          <h2>Exports</h2>
+          <p><a href="/superadmin/export?format=csv&type=payments" class="btn btn-secondary">Export Payments CSV</a>
+             <a href="/superadmin/export?format=pdf&type=payments" class="btn btn-secondary">Export PDF</a></p>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/maps.js"></script>
+  <script src="/js/dashboard-ui.js"></script>
+  <script>
+    (function() {
+      const revenueData = <%- JSON.stringify(monthlyRevenue || {}) %>;
+      const labels = Object.keys(revenueData).sort();
+      const values = labels.map(k => revenueData[k]);
+      if (document.getElementById('revenueChart') && labels.length) {
+        new Chart(document.getElementById('revenueChart'), {
+          type: 'line',
+          data: { labels, datasets: [{ label: 'Revenue (UGX)', data: values, borderColor: '#0F4C81', backgroundColor: 'rgba(15,76,129,0.12)', tension: 0.4, fill: true }] },
+          options: { responsive: true, scales: { y: { beginAtZero: true, grid: { color: 'rgba(148,163,184,0.25)' } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } }
+        });
+      }
+      if (typeof initSuperAdminMap === 'function') initSuperAdminMap('map', [], document.getElementById('divisionFilter'), document.getElementById('lastUpdate'));
+    })();
+  </script>
+</body>
+</html>

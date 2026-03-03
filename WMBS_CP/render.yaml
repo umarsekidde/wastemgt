@@ -1,0 +1,14 @@
+# Render Blueprint – WMBS
+# See https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: wmbs
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      # Add the rest in Render Dashboard → Environment (DB_*, JWT_SECRET, etc.)

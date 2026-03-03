@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WMBS - Waste Management & Billing System</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0F4C81 0%, #1DB954 100%);
+      color: #fff;
+      padding: 20px;
+    }
+    .card {
+      background: rgba(255,255,255,0.95);
+      color: #1a1a1a;
+      padding: 2rem;
+      border-radius: 16px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+    h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    p { font-size: 0.95rem; line-height: 1.5; margin-bottom: 1rem; color: #555; }
+    .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      background: linear-gradient(45deg, #0F4C81, #1DB954);
+      color: #fff;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      margin-top: 0.5rem;
+    }
+    .btn:hover { opacity: 0.9; }
+    .note { font-size: 0.85rem; color: #666; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #eee; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>WMBS</h1>
+    <p>Waste Management & Billing System</p>
+    <p>This is a <strong>Node.js application</strong>. InfinityFree cannot run it (it only hosts static files and PHP).</p>
+    <p>To use the login and full app:</p>
+    <ol style="text-align: left; margin: 1rem 0; padding-left: 1.25rem;">
+      <li>Deploy this project to a <strong>Node.js host</strong> (e.g. <a href="https://render.com" target="_blank" rel="noopener">Render</a>, <a href="https://railway.app" target="_blank" rel="noopener">Railway</a>, <a href="https://www.cyclic.sh" target="_blank" rel="noopener">Cyclic</a>).</li>
+      <li>Use a free MySQL database (e.g. from the same host or <a href="https://www.freemysqlhosting.net" target="_blank" rel="noopener">FreeMySQLHosting</a>).</li>
+      <li>Open your app URL; the login page will be at <strong>/auth/login</strong>.</li>
+    </ol>
+    <a href="/auth/login" class="btn">Go to Login</a>
+    <p class="note">If you see this on InfinityFree: “Go to Login” will not work here. Deploy the app to a Node.js host first, then visit <em>your-app-url/auth/login</em>.</p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,67 @@
+@media (max-width: 1024px) {
+  .main {
+    margin-left: 0;
+    padding: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .kpi-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.collector-dashboard .dashboard-main { padding: 1rem; }
+.collector-dashboard .btn { margin: 0.25rem; }
+.collector-dashboard #collectorMap { height: 250px; }
+
+/* Small and medium screens (phones & small tablets) */
+@media (max-width: 768px) {
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 220px;
+  }
+
+  .main {
+    margin-left: 0;
+    padding: 16px;
+  }
+
+  .dashboard-main {
+    padding: 0;
+  }
+
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-row {
+    grid-template-columns: 1fr;
+  }
+
+  table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    font-size: 0.85rem;
+  }
+
+  th,
+  td {
+    white-space: nowrap;
+    padding: 8px;
+  }
+}
+
+.collector-dashboard .dashboard-main { padding: 1rem; }
+.collector-dashboard .btn { margin: 0.25rem; }
+.collector-dashboard #collectorMap { height: 250px; }

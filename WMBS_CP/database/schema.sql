@@ -1,0 +1,3 @@
+-- WMBS MySQL - create DB then run: npm run db:sync
+-- CREATE DATABASE wmbs_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- Tables are created by Sequelize sync; this file is reference only.

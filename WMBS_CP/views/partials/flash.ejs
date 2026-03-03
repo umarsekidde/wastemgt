@@ -1,0 +1,7 @@
+<% if (typeof flash !== 'undefined' && flash && flash.length) { %>
+  <div class="flash-messages">
+    <% flash.forEach(f => { %>
+      <div class="flash flash-<%= f.type || 'info' %>"><%= f.message %></div>
+    <% }); %>
+  </div>
+<% } %>

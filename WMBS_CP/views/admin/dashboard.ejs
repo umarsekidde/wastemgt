@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - WMBS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="sidebar-icon">W</div>
+          <span>WMBS Admin</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/admin"><span class="sidebar-icon">🏠</span><span>Dashboard</span></a>
+        <a href="/admin/collectors"><span class="sidebar-icon">🚛</span><span>Collectors</span></a>
+        <a href="/admin/requests"><span class="sidebar-icon">📥</span><span>Requests</span></a>
+        <a href="/admin/revenue"><span class="sidebar-icon">💳</span><span>Revenue</span></a>
+        <a href="/admin/customers"><span class="sidebar-icon">👥</span><span>Customers</span></a>
+        <a href="/admin/performance"><span class="sidebar-icon">📈</span><span>Performance</span></a>
+        <a href="/auth/logout"><span class="sidebar-icon">⏏</span><span>Logout</span></a>
+      </nav>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="sidebarToggle" class="icon-button" type="button">☰</button>
+          <div>
+            <div class="topbar-title"><%= company ? company.name : 'Division Admin' %></div>
+            <div class="text-muted">Waste Management & Billing</div>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button id="darkToggle" class="icon-button" type="button">🌙</button>
+          <div class="user-pill">
+            <div class="user-pill-avatar"></div>
+            <span>Admin</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="dashboard-main">
+        <h1>Division Admin Dashboard</h1>
+
+        <section class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">Total Customers</div>
+            <div class="kpi-value" data-countup="<%= customers ? customers.length || 0 : 0 %>">0</div>
+            <div class="kpi-trend">Active billing customers</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Total Waste Collected (Jobs)</div>
+            <div class="kpi-value" data-countup="<%= requests ? requests.length || 0 : 0 %>">0</div>
+            <div class="kpi-trend text-muted">Completed & in-progress pickups</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Active Trucks</div>
+            <div class="kpi-value" data-countup="<%= trucks ? trucks.length || 0 : 0 %>">0</div>
+            <div class="kpi-trend">Sending live GPS</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Revenue Today (UGX)</div>
+            <div class="kpi-value" data-countup="<%= (monthlyRevenue && Object.values(monthlyRevenue).length) ? Object.values(monthlyRevenue)[Object.values(monthlyRevenue).length-1] : 0 %>">0</div>
+            <div class="kpi-trend text-muted">Latest recorded period</div>
+          </div>
+        </section>
+
+        <section class="section-row dashboard-section">
+          <div class="card">
+            <h2>Revenue trend</h2>
+            <p class="text-muted">Monthly revenue performance</p>
+            <canvas id="revenueChart" height="160"></canvas>
+          </div>
+          <div class="card map-card">
+            <h2>Live Collector & Customer Map</h2>
+            <p class="text-muted">Blue pin = collector · Green dot = customer pickup location</p>
+            <div id="map"></div>
+            <p id="lastUpdate" class="text-muted"></p>
+            <p id="mapError" class="auth-error" style="display:none;"></p>
+          </div>
+        </section>
+
+        <section class="dashboard-section">
+          <h2>Recent Requests</h2>
+          <div class="card">
+            <table>
+              <thead><tr><th>ID</th><th>Customer</th><th>Date</th><th>Status</th></tr></thead>
+              <tbody>
+                <% if (requests && requests.length) { requests.forEach(function(r) { %>
+                  <tr>
+                    <td><%= r.id %></td>
+                    <td><%= r.User ? r.User.name : '-' %></td>
+                    <td><%= r.scheduled_date || '-' %></td>
+                    <td><%= r.status %></td>
+                  </tr>
+                <% }); } else { %><tr><td colspan="4">No requests</td></tr><% } %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/maps.js"></script>
+  <script src="/js/dashboard-ui.js"></script>
+  <script>
+    (function() {
+      var revenueData = <%- JSON.stringify(monthlyRevenue || {}) %>;
+      var labels = Object.keys(revenueData).sort();
+      var values = labels.map(function(k) { return revenueData[k]; });
+      if (document.getElementById('revenueChart') && labels.length) {
+        new Chart(document.getElementById('revenueChart'), {
+          type: 'line',
+          data: { labels: labels, datasets: [{ label: 'Revenue (UGX)', data: values, borderColor: '#2EC4B6', backgroundColor: 'rgba(46,196,182,0.15)', tension: 0.4, fill: true }] },
+          options: { responsive: true, scales: { y: { beginAtZero: true, grid: { color: 'rgba(148,163,184,0.25)' } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } }
+        });
+      }
+      if (typeof initAdminMap === 'function') initAdminMap('map', document.getElementById('lastUpdate'));
+    })();
+  </script>
+</body>
+</html>
