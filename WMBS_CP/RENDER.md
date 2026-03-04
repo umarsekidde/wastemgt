@@ -102,6 +102,14 @@ After the first deploy, the app may fail until the database has tables. You can:
    ```
    (Your local app will use the env that points to the production MySQL.)
 
+**Option C – One-time seed URL (no Shell; e.g. Render free tier)**
+
+1. In Render dashboard → your service → **Environment**, add a variable: **Key** `SEED_SECRET`, **Value** a long random string (e.g. `mySecretSeedKey2024`).
+2. Save and wait for the service to redeploy.
+3. In your browser, visit: `https://YOUR-SERVICE-NAME.onrender.com/api/seed?secret=mySecretSeedKey2024` (use the same value you set for `SEED_SECRET`).
+4. You should see JSON like `{"ok":true,"message":"Seed completed. Super Admin: superadmin@wmbs.com / SuperAdmin@123"}`. Then log in at `/auth/login` with **superadmin@wmbs.com** / **SuperAdmin@123**.
+5. (Recommended) Remove `SEED_SECRET` from Render Environment and redeploy so the endpoint no longer works.
+
 ---
 
 ## 5. Your live URLs

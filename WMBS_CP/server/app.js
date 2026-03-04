@@ -53,6 +53,21 @@ app.use('/payment', paymentRoutes);
 
 app.use(csrfErrorHandler);
 
+// One-time seed endpoint (no Shell on Render free tier). Set SEED_SECRET in Render, visit /api/seed?secret=YOUR_SECRET once, then remove SEED_SECRET.
+app.get('/api/seed', (req, res) => {
+  const secret = process.env.SEED_SECRET;
+  if (!secret || req.query.secret !== secret) {
+    return res.status(404).json({ error: 'Not found' });
+  }
+  const { runSeed } = require('./config/seedLogic');
+  runSeed()
+    .then((result) => res.json(result))
+    .catch((err) => {
+      console.error('Seed failed:', err);
+      res.status(500).json({ error: 'Seed failed', message: err.message });
+    });
+});
+
 app.get('/', (req, res) => {
   if (req.cookies?.token) return res.redirect('/auth/login');
   res.redirect('/auth/login');
