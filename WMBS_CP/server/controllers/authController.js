@@ -43,7 +43,8 @@ exports.getRegister = async (req, res) => {
     return res.render('auth/register', { title: 'Register', divisions, error: null, csrfToken: res.locals.csrfToken });
   } catch (err) {
     console.error('getRegister error:', err.message);
-    return res.status(500).render('errors/setup', { title: 'Setup Required', appUrl: process.env.APP_URL || '' });
+    const appUrl = process.env.APP_URL || `${req.protocol}://${req.get('host') || 'wastemgt-1v4i.onrender.com'}`;
+    return res.status(500).render('errors/setup', { title: 'Setup Required', appUrl });
   }
 };
 

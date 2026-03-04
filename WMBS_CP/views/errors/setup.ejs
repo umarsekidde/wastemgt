@@ -5,13 +5,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= title %> - WMBS</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .setup-steps { text-align: left; max-width: 32rem; margin: 1rem auto; }
+    .setup-steps li { margin: 0.6rem 0; }
+    .setup-url { background: #f0f4f8; padding: 0.75rem 1rem; border-radius: 6px; font-family: monospace; word-break: break-all; margin: 0.5rem 0; }
+    .setup-credentials { background: #e8f5e9; padding: 0.75rem 1rem; border-radius: 6px; margin: 0.75rem 0; }
+  </style>
 </head>
 <body class="error-page">
   <div class="error-box">
     <h1>Setup required</h1>
-    <p>The database has not been set up yet. Create tables and the Super Admin account first.</p>
-    <p><strong>Option 1 (no shell):</strong> In Render, add environment variable <code>SEED_SECRET</code> (e.g. <code>mySecret123</code>), redeploy, then open <code><%= appUrl %>/api/setup?secret=mySecret123</code> in your browser once. This creates tables and the Super Admin account. Then remove <code>SEED_SECRET</code> and log in with <strong>superadmin@wmbs.com</strong> / <strong>SuperAdmin@123</strong>.</p>
-    <p><strong>Option 2:</strong> Run <code>npm run db:sync</code> and <code>npm run db:seed</code> locally with your production database credentials in <code>.env</code>.</p>
+    <p>Registration and Super Admin login will work <strong>after</strong> you run the one-time setup below.</p>
+
+    <p><strong>Do this once (Render, no shell):</strong></p>
+    <ol class="setup-steps">
+      <li>In <strong>Render Dashboard</strong> → your service → <strong>Environment</strong>.</li>
+      <li>Add a variable: Key <code>SEED_SECRET</code>, Value e.g. <code>wmbs2024</code> (any secret you choose). Save.</li>
+      <li>Wait for the service to <strong>redeploy</strong> (automatic after saving env).</li>
+      <li>Open this URL in your browser (replace <code>wmbs2024</code> with the same value you set):
+        <div class="setup-url"><%= appUrl %>/api/setup?secret=wmbs2024</div>
+        You should see JSON like <code>{"ok":true,"message":"Setup complete..."}</code>.
+      </li>
+      <li>(Optional) Remove <code>SEED_SECRET</code> from Render Environment and save again.</li>
+    </ol>
+
+    <div class="setup-credentials">
+      <strong>After setup, log in as Super Admin:</strong><br>
+      Email: <code>superadmin@wmbs.com</code> &nbsp; Password: <code>SuperAdmin@123</code>
+    </div>
+
+    <p><strong>Option 2 (local):</strong> Run <code>npm run db:sync</code> then <code>npm run db:seed</code> locally with your production DB credentials in <code>.env</code>.</p>
+
     <a href="/auth/login" class="btn btn-primary">Back to Login</a>
   </div>
 </body>
