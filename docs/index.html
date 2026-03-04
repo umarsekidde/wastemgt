@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WMBS - Waste Management & Billing System</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -26,35 +27,57 @@
       text-align: center;
       box-shadow: 0 20px 60px rgba(0,0,0,0.2);
     }
-    h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    h1 { font-size: 1.8rem; margin-bottom: 0.5rem; color: #0F4C81; }
+    /* Icon Style */
+    .main-icon { font-size: 3rem; color: #1DB954; margin-bottom: 1rem; }
     p { font-size: 0.95rem; line-height: 1.5; margin-bottom: 1rem; color: #555; }
     .btn {
-      display: inline-block;
-      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px; /* Space between icon and text */
+      padding: 14px 24px;
       background: linear-gradient(45deg, #0F4C81, #1DB954);
       color: #fff;
       text-decoration: none;
       border-radius: 8px;
       font-weight: 600;
-      margin-top: 0.5rem;
+      margin-top: 1rem;
+      transition: transform 0.2s;
     }
-    .btn:hover { opacity: 0.9; }
-    .note { font-size: 0.85rem; color: #666; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #eee; }
+    .btn:hover { transform: translateY(-2px); opacity: 0.9; }
+    .status-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.75rem;
+      background: #e8f5e9;
+      color: #2e7d32;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 1rem;
+    }
   </style>
 </head>
 <body>
   <div class="card">
+    <i class="fa-solid fa-recycle main-icon"></i>
     <h1>WMBS</h1>
+    
+    <div class="status-tag">
+      <i class="fa-solid fa-circle-check"></i> System Live on Render
+    </div>
+
     <p>Waste Management & Billing System</p>
-    <p>This is a <strong>Node.js application</strong>. InfinityFree cannot run it (it only hosts static files and PHP).</p>
-    <p>To use the login and full app:</p>
-    <ol style="text-align: left; margin: 1rem 0; padding-left: 1.25rem;">
-      <li>Deploy this project to a <strong>Node.js host</strong> (e.g. <a href="https://render.com" target="_blank" rel="noopener">Render</a>, <a href="https://railway.app" target="_blank" rel="noopener">Railway</a>, <a href="https://www.cyclic.sh" target="_blank" rel="noopener">Cyclic</a>).</li>
-      <li>Use a free MySQL database (e.g. from the same host or <a href="https://www.freemysqlhosting.net" target="_blank" rel="noopener">FreeMySQLHosting</a>).</li>
-      <li>Open your app URL; the login page will be at <strong>/auth/login</strong>.</li>
-    </ol>
-    <a href="/auth/login" class="btn">Go to Login</a>
-    <p class="note">If you see this on InfinityFree: “Go to Login” will not work here. Deploy the app to a Node.js host first, then visit <em>your-app-url/auth/login</em>.</p>
+    <p>Your Node.js environment and <strong>PostgreSQL</strong> database are now configured.</p>
+    
+    <a href="/auth/login" class="btn">
+      <i class="fa-solid fa-right-to-bracket"></i> Go to Login
+    </a>
+
+    <a href="/map" class="btn" style="background: #333;">
+      <i class="fa-solid fa-map-location-dot"></i> Open GPS Tracker
+    </a>
   </div>
 </body>
 </html>
