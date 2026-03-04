@@ -17,6 +17,9 @@ const webhookRoutes = require('./routes/webhookRoutes');
 
 const app = express();
 
+// Required behind Render (or any reverse proxy): trust X-Forwarded-For so rate-limit and IP-based logic work
+app.set('trust proxy', 1);
+
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '../views'));
 

@@ -1,12 +1,17 @@
 require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
-const mysql = require('mysql2/promise');
 const db = require('../models');
 
 const env = process.env.NODE_ENV || 'development';
 const config = require('./database')[env] || require('./database').development;
 const dbName = config.database || process.env.DB_NAME || 'wmbs_db';
 
+/** On Render with DATABASE_URL (Postgres), skip MySQL create-database step. */
 async function ensureDatabase() {
+  if (process.env.DATABASE_URL) {
+    console.log('Using DATABASE_URL (e.g. Render Postgres); skipping create-database step.');
+    return;
+  }
+  const mysql = require('mysql2/promise');
   const connection = await mysql.createConnection({
     host: config.host || '127.0.0.1',
     port: config.port || 3306,

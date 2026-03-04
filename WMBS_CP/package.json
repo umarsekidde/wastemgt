@@ -1,4 +1,15 @@
 {
+  "name": "wmbs",
+  "version": "1.0.0",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "db:sync": "node server/config/sync-db.js",
+    "db:seed": "node server/config/seed.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "blob-stream": "^0.1.3",
