@@ -218,27 +218,32 @@ exports.createAdmin = async (req, res) => {
 
 exports.broadcast = async (req, res) => {
   const divisions = await db.Division.findAll({ where: { is_active: true } });
-  res.render('superadmin/broadcast', { title: 'Broadcast Notification', divisions });
+  res.render('superadmin/broadcast', { title: 'Broadcast Notification', divisions, query: req.query });
 };
 
 exports.postBroadcast = async (req, res) => {
   try {
     const { title, message, division_id, target_roles } = req.body;
-    await db.Broadcast.create({ title, message, division_id: division_id || null, created_by: req.user.id, target_roles: target_roles ? (Array.isArray(target_roles) ? target_roles : [target_roles]) : null });
+    const divId = division_id && String(division_id).trim() !== '' ? parseInt(division_id, 10) : null;
+    const roles = target_roles == null ? null : Array.isArray(target_roles) ? target_roles : [target_roles];
 
-    let where = {};
-    if (division_id) where.division_id = division_id;
-    if (target_roles && target_roles.length) where.role = { [Op.in]: target_roles };
+    await db.Broadcast.create({ title, message, division_id: divId, created_by: req.user.id, target_roles: roles });
+
+    const where = {};
+    if (divId) where.division_id = divId;
+    if (roles && roles.length) where.role = { [Op.in]: roles };
 
     const users = await db.User.findAll({ where: { is_active: true, ...where }, attributes: ['id'] });
-    await db.Notification.bulkCreate(users.map((u) => ({ user_id: u.id, title, message, type: 'broadcast' })));
+    if (users.length) {
+      await db.Notification.bulkCreate(users.map((u) => ({ user_id: u.id, title, message, type: 'broadcast' })));
+    }
     await db.AuditLog.create({ action: 'BROADCAST', performed_by: req.user.id });
     if (req.xhr) return res.json({ success: true });
-    res.redirect('/superadmin/broadcast');
+    res.redirect('/superadmin/broadcast?success=1');
   } catch (err) {
-    console.error(err);
+    console.error('postBroadcast error:', err);
     if (req.xhr) return res.status(400).json({ success: false, message: err.message });
-    res.redirect('/superadmin/broadcast');
+    res.redirect('/superadmin/broadcast?error=1');
   }
 };
 

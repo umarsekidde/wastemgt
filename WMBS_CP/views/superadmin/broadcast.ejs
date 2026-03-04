@@ -45,6 +45,8 @@
       </header>
       <main class="dashboard-main">
     <h1>Broadcast Notification</h1>
+    <% if (typeof query !== 'undefined' && query && query.success) { %><p class="auth-success" style="margin-bottom:1rem;">Broadcast sent successfully.</p><% } %>
+    <% if (typeof query !== 'undefined' && query && query.error) { %><p class="auth-error" style="margin-bottom:1rem;">Something went wrong. Please try again.</p><% } %>
     <form method="post" action="/superadmin/broadcast" class="card" style="max-width:620px;">
       <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
       <label>Title</label>

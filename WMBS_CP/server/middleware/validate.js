@@ -93,8 +93,11 @@ const schemas = {
   broadcast: Joi.object({
     title: Joi.string().min(2).max(255).required(),
     message: Joi.string().min(5).required(),
-    division_id: Joi.number().integer().allow(null),
-    target_roles: Joi.array().items(Joi.string().valid('customer', 'collector', 'admin', 'superadmin')).allow(null)
+    division_id: Joi.any().allow(null, '').optional(),
+    target_roles: Joi.alternatives().try(
+      Joi.array().items(Joi.string().valid('customer', 'collector', 'admin', 'superadmin')),
+      Joi.string().valid('customer', 'collector', 'admin', 'superadmin')
+    ).allow(null).optional()
   })
 };
 
