@@ -1,5 +1,6 @@
 const db = require('../models');
 const { Op } = require('sequelize');
+const { getMonthExpr } = require('../utils/dbHelpers');
 
 exports.dashboard = async (req, res) => {
   try {
@@ -21,10 +22,11 @@ exports.dashboard = async (req, res) => {
         const cIds = (await db.Collector.findAll({ where: { company_id: company.id }, attributes: ['id'] })).map((c) => c.id);
         const reqIds = (await db.WasteRequest.findAll({ where: { assigned_collector_id: { [Op.in]: cIds } }, attributes: ['id'] })).map((r) => r.id);
         if (reqIds.length === 0) return [];
+        const { expr: monthExpr, group: monthGroup } = getMonthExpr(db.sequelize, 'Payment.created_at');
         return db.Payment.findAll({
           where: { status: 'success', request_id: { [Op.in]: reqIds } },
-          attributes: [[db.sequelize.fn('SUM', db.sequelize.col('amount')), 'total'], [db.sequelize.fn('DATE_FORMAT', db.sequelize.col('Payment.created_at'), '%Y-%m'), 'month']],
-          group: [db.sequelize.fn('DATE_FORMAT', db.sequelize.col('Payment.created_at'), '%Y-%m')],
+          attributes: [[db.sequelize.fn('SUM', db.sequelize.col('amount')), 'total'], [monthExpr, 'month']],
+          group: [monthGroup],
           raw: true
         });
       })(),

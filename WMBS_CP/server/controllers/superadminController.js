@@ -3,17 +3,19 @@ const { Op } = require('sequelize');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
+const { getMonthExpr } = require('../utils/dbHelpers');
 
 exports.dashboard = async (req, res) => {
   try {
+    const { expr: monthExpr, group: monthGroup } = getMonthExpr(db.sequelize, 'created_at');
     const [userCount, companyCount, divisions, revenueResult, recentLogs] = await Promise.all([
       db.User.count(),
       db.Company.count(),
       db.Division.findAll({ where: { is_active: true }, order: [['name']] }),
       db.Payment.findAll({
         where: { status: 'success' },
-        attributes: [[db.sequelize.fn('SUM', db.sequelize.col('amount')), 'total'], [db.sequelize.fn('DATE_FORMAT', db.sequelize.col('created_at'), '%Y-%m'), 'month']],
-        group: [db.sequelize.fn('DATE_FORMAT', db.sequelize.col('created_at'), '%Y-%m')],
+        attributes: [[db.sequelize.fn('SUM', db.sequelize.col('amount')), 'total'], [monthExpr, 'month']],
+        group: [monthGroup],
         raw: true
       }),
       db.AuditLog.findAll({
