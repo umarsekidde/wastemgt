@@ -53,7 +53,24 @@ app.use('/payment', paymentRoutes);
 
 app.use(csrfErrorHandler);
 
-// One-time seed endpoint (no Shell on Render free tier). Set SEED_SECRET in Render, visit /api/seed?secret=YOUR_SECRET once, then remove SEED_SECRET.
+// One-time setup (sync + seed) when Shell is not available (e.g. Render free tier). Set SEED_SECRET in Render, visit once, then remove it.
+app.get('/api/setup', (req, res) => {
+  const secret = process.env.SEED_SECRET;
+  if (!secret || req.query.secret !== secret) {
+    return res.status(404).json({ error: 'Not found' });
+  }
+  const db = require('./models');
+  const { runSeed } = require('./config/seedLogic');
+  db.sequelize.sync({ alter: process.env.DB_ALTER === 'true' })
+    .then(() => runSeed())
+    .then((result) => res.json({ ok: true, message: 'Setup complete. Log in with superadmin@wmbs.com / SuperAdmin@123', seed: result }))
+    .catch((err) => {
+      console.error('Setup failed:', err);
+      res.status(500).json({ error: 'Setup failed', message: err.message });
+    });
+});
+
+// Seed only (use if tables already exist).
 app.get('/api/seed', (req, res) => {
   const secret = process.env.SEED_SECRET;
   if (!secret || req.query.secret !== secret) {

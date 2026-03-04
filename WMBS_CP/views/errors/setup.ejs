@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - WMBS</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="error-page">
+  <div class="error-box">
+    <h1>Setup required</h1>
+    <p>The database has not been set up yet. Create tables and the Super Admin account first.</p>
+    <p><strong>Option 1 (no shell):</strong> In Render, add environment variable <code>SEED_SECRET</code> (e.g. <code>mySecret123</code>), redeploy, then open <code><%= appUrl %>/api/setup?secret=mySecret123</code> in your browser once. This creates tables and the Super Admin account. Then remove <code>SEED_SECRET</code> and log in with <strong>superadmin@wmbs.com</strong> / <strong>SuperAdmin@123</strong>.</p>
+    <p><strong>Option 2:</strong> Run <code>npm run db:sync</code> and <code>npm run db:seed</code> locally with your production database credentials in <code>.env</code>.</p>
+    <a href="/auth/login" class="btn btn-primary">Back to Login</a>
+  </div>
+</body>
+</html>

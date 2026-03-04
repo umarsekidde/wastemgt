@@ -29,7 +29,8 @@ const schemas = {
       .messages({ 'string.pattern.base': 'Password must contain uppercase, lowercase and number' }),
     phone: Joi.string().allow('', null),
     address: Joi.string().allow('', null),
-    division_id: Joi.number().integer().allow(null)
+    division_id: Joi.number().integer().min(1).required()
+      .messages({ 'any.required': 'Please select your division', 'number.min': 'Please select your division' })
   }),
 
   login: Joi.object({

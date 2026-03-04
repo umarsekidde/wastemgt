@@ -14,34 +14,37 @@ exports.getLogin = (req, res) => {
 exports.postLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await db.User.findOne({
-      where: { email: email.toLowerCase() },
-      include: [{ model: db.Division, as: 'Division' }]
-    });
+    const user = await db.User.findOne({ where: { email: (email || '').toLowerCase() } });
     if (!user) {
       return res.render('auth/login', { title: 'Login', error: 'Invalid email or password', csrfToken: res.locals.csrfToken, query: req.query });
     }
     if (!user.is_active) {
       return res.render('auth/login', { title: 'Login', error: 'Account is deactivated. Please contact support.', csrfToken: res.locals.csrfToken, query: req.query });
     }
-    if (!(await user.comparePassword(password))) {
+    const match = await user.comparePassword(password);
+    if (!match) {
       return res.render('auth/login', { title: 'Login', error: 'Invalid email or password', csrfToken: res.locals.csrfToken, query: req.query });
     }
     const token = generateToken(user.id, user.role);
     const cookieOpts = { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000, sameSite: 'strict' };
     res.cookie('wmbs_token_' + user.role, token, cookieOpts);
     res.cookie('token', token, cookieOpts);
-    await db.AuditLog.create({ action: 'LOGIN', performed_by: user.id, ip_address: req.ip });
+    db.AuditLog.create({ action: 'LOGIN', performed_by: user.id, ip_address: req.ip }).catch((e) => console.error('AuditLog create failed:', e.message));
     return redirectByRole(user.role, res);
   } catch (err) {
-    console.error(err);
+    console.error('Login error:', err);
     res.render('auth/login', { title: 'Login', error: 'Login failed', csrfToken: res.locals.csrfToken, query: req.query });
   }
 };
 
 exports.getRegister = async (req, res) => {
-  const divisions = await db.Division.findAll({ where: { is_active: true }, order: [['name']] });
-  res.render('auth/register', { title: 'Register', divisions, error: null, csrfToken: res.locals.csrfToken });
+  try {
+    const divisions = await db.Division.findAll({ where: { is_active: true }, order: [['name']] });
+    return res.render('auth/register', { title: 'Register', divisions, error: null, csrfToken: res.locals.csrfToken });
+  } catch (err) {
+    console.error('getRegister error:', err.message);
+    return res.status(500).render('errors/setup', { title: 'Setup Required', appUrl: process.env.APP_URL || '' });
+  }
 };
 
 exports.postRegister = async (req, res) => {
@@ -68,9 +71,12 @@ exports.postRegister = async (req, res) => {
     });
     res.redirect('/auth/login?registered=1');
   } catch (err) {
-    console.error(err);
-    const divisions = await db.Division.findAll({ where: { is_active: true } });
-    res.render('auth/register', { title: 'Register', divisions, error: 'Registration failed', csrfToken: res.locals.csrfToken });
+    console.error('postRegister error:', err);
+    let divisions = [];
+    try {
+      divisions = await db.Division.findAll({ where: { is_active: true }, order: [['name']] });
+    } catch (_) {}
+    return res.render('auth/register', { title: 'Register', divisions, error: 'Registration failed. Please try again.', csrfToken: res.locals.csrfToken });
   }
 };
 
