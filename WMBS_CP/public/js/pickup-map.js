@@ -1,6 +1,7 @@
 /**
  * Customer pickup request: map to choose collection location.
  * Click on map to set pickup point; lat/lng and address (reverse-geocoded) are sent with the request.
+ * Uses a fast tile layer and updateWhenIdle to reduce lag during zoom/pan.
  */
 (function() {
   var KAMPALA = [0.3476, 32.5825];
@@ -11,14 +12,50 @@
   var coordsEl = document.getElementById('pickupCoordinates');
   if (!mapEl || typeof L === 'undefined') return;
 
-  var map = L.map('pickupMap').setView(KAMPALA, 13);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-  }).addTo(map);
-
-  var marker = null;
-  var reverseGeocodeTimeout = null;
-
+  var map, marker, reverseGeocodeTimeout;
+  function initMap() {
+    map = L.map('pickupMap', { preferCanvas: true }).setView(KAMPALA, 13);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 19,
+      minZoom: 2,
+      updateWhenIdle: true,
+      keepBuffer: 2
+    }).addTo(map);
+    marker = null;
+    reverseGeocodeTimeout = null;
+    map.on('click', onMapClick);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-secondary';
+    btn.style.marginTop = '8px';
+    btn.textContent = 'Use my current location';
+    btn.addEventListener('click', onUseLocation);
+    mapEl.parentNode.insertBefore(btn, mapEl.nextSibling);
+  }
+  function onMapClick(e) {
+    setLocation(e.latlng.lat, e.latlng.lng);
+  }
+  function onUseLocation() {
+    if (!navigator.geolocation) { alert('Geolocation is not supported'); return; }
+    var btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Locating…';
+    navigator.geolocation.getCurrentPosition(
+      function(pos) {
+        setLocation(pos.coords.latitude, pos.coords.longitude);
+        btn.disabled = false;
+        btn.textContent = 'Use my current location';
+      },
+      function() {
+        alert('Could not get your location. Please click on the map to set the pickup point.');
+        btn.disabled = false;
+        btn.textContent = 'Use my current location';
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+  }
   function setLocation(lat, lng) {
     if (latEl) latEl.value = lat;
     if (lngEl) lngEl.value = lng;
@@ -42,32 +79,6 @@
     }, 300);
   }
 
-  map.on('click', function(e) {
-    setLocation(e.latlng.lat, e.latlng.lng);
-  });
-
-  var btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'btn btn-secondary';
-  btn.style.marginTop = '8px';
-  btn.textContent = 'Use my current location';
-  btn.addEventListener('click', function() {
-    if (!navigator.geolocation) { alert('Geolocation is not supported'); return; }
-    btn.disabled = true;
-    btn.textContent = 'Locating…';
-    navigator.geolocation.getCurrentPosition(
-      function(pos) {
-        setLocation(pos.coords.latitude, pos.coords.longitude);
-        btn.disabled = false;
-        btn.textContent = 'Use my current location';
-      },
-      function() {
-        alert('Could not get your location. Please click on the map to set the pickup point.');
-        btn.disabled = false;
-        btn.textContent = 'Use my current location';
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-    );
-  });
-  mapEl.parentNode.insertBefore(btn, mapEl.nextSibling);
+  if (requestAnimationFrame) requestAnimationFrame(initMap);
+  else setTimeout(initMap, 0);
 })();
