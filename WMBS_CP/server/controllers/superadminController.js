@@ -8,7 +8,7 @@ const { getMonthExpr } = require('../utils/dbHelpers');
 exports.dashboard = async (req, res) => {
   try {
     const { expr: monthExpr, group: monthGroup } = getMonthExpr(db.sequelize, 'created_at');
-    const [userCount, companyCount, divisions, revenueResult, recentLogs] = await Promise.all([
+    const [userCount, companyCount, divisions, revenueResult] = await Promise.all([
       db.User.count(),
       db.Company.count(),
       db.Division.findAll({ where: { is_active: true }, order: [['name']] }),
@@ -17,11 +17,6 @@ exports.dashboard = async (req, res) => {
         attributes: [[db.sequelize.fn('SUM', db.sequelize.col('amount')), 'total'], [monthExpr, 'month']],
         group: [monthGroup],
         raw: true
-      }),
-      db.AuditLog.findAll({
-        limit: 20,
-        order: [['created_at', 'DESC']],
-        include: [{ model: db.User, as: 'User', attributes: ['name', 'email', 'role'] }]
       })
     ]);
 
@@ -53,7 +48,6 @@ exports.dashboard = async (req, res) => {
       companyCount,
       divisions,
       monthlyRevenue,
-      recentLogs,
       trucks
     });
   } catch (err) {
@@ -251,13 +245,52 @@ exports.auditLogs = async (req, res) => {
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
   const limit = 50;
   const offset = (page - 1) * limit;
+  const dateFrom = req.query.date_from ? String(req.query.date_from).trim() : null;
+  const dateTo = req.query.date_to ? String(req.query.date_to).trim() : null;
+  const actionFilter = req.query.action ? String(req.query.action).trim() : null;
+
+  const where = {};
+  if (actionFilter) where.action = actionFilter;
+  if (dateFrom) {
+    const start = new Date(dateFrom);
+    start.setHours(0, 0, 0, 0);
+    where.created_at = where.created_at || {};
+    where.created_at[Op.gte] = start;
+  }
+  if (dateTo) {
+    const end = new Date(dateTo);
+    end.setHours(23, 59, 59, 999);
+    where.created_at = where.created_at || {};
+    where.created_at[Op.lte] = end;
+  }
+
   const { count, rows } = await db.AuditLog.findAndCountAll({
+    where,
     limit,
     offset,
     order: [['created_at', 'DESC']],
     include: [{ model: db.User, as: 'User', attributes: ['name', 'email', 'role'] }]
   });
-  res.render('superadmin/audit-logs', { title: 'Audit Logs', logs: rows, total: count, page, totalPages: Math.ceil(count / limit) });
+  const totalPages = Math.ceil(count / limit);
+  const actionRows = await db.AuditLog.findAll({ attributes: ['action'], group: ['action'], raw: true });
+  const distinctActions = actionRows.map((x) => x.action).filter(Boolean).sort();
+  const q = { ...req.query };
+  const prevUrl = totalPages > 1 && page > 1 ? '/superadmin/audit-logs?' + new URLSearchParams({ ...q, page: String(page - 1) }).toString() : null;
+  const nextUrl = totalPages > 1 && page < totalPages ? '/superadmin/audit-logs?' + new URLSearchParams({ ...q, page: String(page + 1) }).toString() : null;
+  res.render('superadmin/audit-logs', {
+    title: 'Audit Logs',
+    logs: rows,
+    total: count,
+    page,
+    totalPages,
+    date_from: dateFrom,
+    date_to: dateTo,
+    action_filter: actionFilter,
+    distinctActions,
+    query: req.query,
+    prevUrl,
+    nextUrl
+  });
 };
 
 exports.exportReports = async (req, res) => {

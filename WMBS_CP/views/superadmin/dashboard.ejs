@@ -108,24 +108,6 @@
         </section>
 
         <section class="dashboard-section">
-          <h2>Recent Audit Logs</h2>
-          <div class="card">
-            <table>
-              <thead><tr><th>Time</th><th>Action</th><th>User</th></tr></thead>
-              <tbody>
-                <% if (recentLogs && recentLogs.length) { recentLogs.forEach(log => { %>
-                  <tr>
-                    <td><%= log.created_at ? new Date(log.created_at).toLocaleString() : '-' %></td>
-                    <td><%= log.action %></td>
-                    <td><%= log.User ? log.User.name : log.performed_by %></td>
-                  </tr>
-                <% }); } else { %><tr><td colspan="3">No logs</td></tr><% } %>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <section class="dashboard-section">
           <h2>Exports</h2>
           <p><a href="/superadmin/export?format=csv&type=payments" class="btn btn-secondary">Export Payments CSV</a>
              <a href="/superadmin/export?format=pdf&type=payments" class="btn btn-secondary">Export PDF</a></p>

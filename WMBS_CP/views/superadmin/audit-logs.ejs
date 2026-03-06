@@ -45,23 +45,50 @@
       </header>
       <main class="dashboard-main">
     <h1>Audit Logs</h1>
+    <form method="get" action="/superadmin/audit-logs" class="card" style="margin-bottom:1.5rem; padding:1rem;">
+      <div style="display:flex; flex-wrap:wrap; gap:1rem; align-items:flex-end;">
+        <div>
+          <label for="date_from" style="display:block; font-size:0.85rem; margin-bottom:4px;">Date from</label>
+          <input type="date" id="date_from" name="date_from" value="<%= typeof date_from !== 'undefined' ? date_from : '' %>" class="form-control" style="width:auto;">
+        </div>
+        <div>
+          <label for="date_to" style="display:block; font-size:0.85rem; margin-bottom:4px;">Date to</label>
+          <input type="date" id="date_to" name="date_to" value="<%= typeof date_to !== 'undefined' ? date_to : '' %>" class="form-control" style="width:auto;">
+        </div>
+        <div>
+          <label for="action" style="display:block; font-size:0.85rem; margin-bottom:4px;">Action</label>
+          <select id="action" name="action" class="form-control" style="width:auto;">
+            <option value="">All actions</option>
+            <% if (typeof distinctActions !== 'undefined' && distinctActions.length) { distinctActions.forEach(a => { %>
+            <option value="<%= a %>" <%= (typeof action_filter !== 'undefined' && action_filter === a) ? 'selected' : '' %>><%= a %></option>
+            <% }); } %>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Filter</button>
+        <a href="/superadmin/audit-logs" class="btn btn-secondary">Clear</a>
+      </div>
+    </form>
     <div class="card">
     <table>
-      <thead><tr><th>Time</th><th>Action</th><th>User</th><th>IP</th></tr></thead>
+      <thead><tr><th>Date</th><th>Time</th><th>Action</th><th>User</th><th>IP</th></tr></thead>
       <tbody>
         <% if (logs && logs.length) { logs.forEach(log => { %>
           <tr>
-            <td><%= log.created_at ? new Date(log.created_at).toLocaleString() : '-' %></td>
+            <td><%= log.created_at ? new Date(log.created_at).toLocaleDateString() : '-' %></td>
+            <td><%= log.created_at ? new Date(log.created_at).toLocaleTimeString() : '-' %></td>
             <td><%= log.action %></td>
             <td><%= log.User ? log.User.name : log.performed_by %></td>
             <td><%= log.ip_address || '-' %></td>
           </tr>
-        <% }); } else { %><tr><td colspan="4">No logs</td></tr><% } %>
+        <% }); } else { %><tr><td colspan="5">No logs</td></tr><% } %>
       </tbody>
     </table>
     </div>
     <% if (totalPages > 1) { %>
-      <p>Page <%= page %> of <%= totalPages %>. <a href="?page=<%= page - 1 %>">Prev</a> <a href="?page=<%= page + 1 %>">Next</a></p>
+      <p style="margin-top:1rem;">Page <%= page %> of <%= totalPages %>.
+        <% if (prevUrl) { %><a href="<%= prevUrl %>">Prev</a><% } %>
+        <% if (nextUrl) { %><a href="<%= nextUrl %>">Next</a><% } %>
+      </p>
     <% } %>
       </main>
     </div>
