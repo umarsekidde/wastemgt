@@ -224,7 +224,15 @@ exports.customers = async (req, res) => {
     ],
     order: [['name']]
   });
-  res.render('admin/customers', { title: 'Customers', customers });
+  const customerIds = customers.map((c) => c.id);
+  const allComplaints = customerIds.length
+    ? await db.Complaint.findAll({
+        where: { user_id: customerIds },
+        include: [{ model: db.User, as: 'User', attributes: ['id', 'name', 'email'] }],
+        order: [['created_at', 'DESC']]
+      })
+    : [];
+  res.render('admin/customers', { title: 'Customers', customers, allComplaints });
 };
 
 exports.performance = async (req, res) => {

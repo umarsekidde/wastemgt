@@ -7,6 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/css/dashboard.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 </head>
 <body>
   <div class="app-shell">
@@ -58,10 +59,14 @@
 
         <section class="dashboard-section">
           <h2>Request pickup</h2>
-          <form id="requestForm" class="card" style="max-width:520px;">
+          <form id="requestForm" class="card" style="max-width:640px;">
             <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+            <input type="hidden" name="latitude" id="pickupLat" value="">
+            <input type="hidden" name="longitude" id="pickupLng" value="">
+            <label>Pickup location (click on the map or enter address below)</label>
+            <div id="pickupMap" style="height:280px; width:100%; border-radius:8px; margin-bottom:12px;"></div>
             <label>Address</label>
-            <input type="text" name="address" required class="form-control">
+            <input type="text" name="address" id="pickupAddress" required class="form-control" placeholder="Street, area, or set by clicking the map">
             <label>Subscription</label>
             <select name="subscription_type" class="form-control">
               <option value="monthly">Monthly - 50000 UGX</option>
@@ -111,8 +116,10 @@
     </div>
   </div>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script src="/js/common.js"></script>
   <script src="/js/dashboard-ui.js"></script>
+  <script src="/js/pickup-map.js"></script>
   <script src="/js/payments.js"></script>
 </body>
 </html>

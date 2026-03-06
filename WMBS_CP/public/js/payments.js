@@ -9,13 +9,20 @@
     requestForm.addEventListener('submit', function(e) {
       e.preventDefault();
       var form = e.target;
+      var addressVal = (form.address && form.address.value) ? form.address.value.trim() : '';
+      var latEl = document.getElementById('pickupLat');
+      var lngEl = document.getElementById('pickupLng');
+      if ((latEl && latEl.value) && (lngEl && lngEl.value) && !addressVal)
+        addressVal = 'Location selected on map (' + latEl.value + ', ' + lngEl.value + ')';
       var data = {
-        address: form.address.value,
+        address: addressVal,
         subscription_type: form.subscription_type.value,
         scheduled_date: form.scheduled_date.value || null,
         scheduled_time_slot: form.scheduled_time_slot ? form.scheduled_time_slot.value : null,
         _csrf: getCsrf()
       };
+      if (latEl && latEl.value) data.latitude = parseFloat(latEl.value, 10);
+      if (lngEl && lngEl.value) data.longitude = parseFloat(lngEl.value, 10);
       fetch('/customer/request-pickup', {
         method: 'POST',
         credentials: 'include',

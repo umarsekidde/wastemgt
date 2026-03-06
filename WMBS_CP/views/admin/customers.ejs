@@ -53,6 +53,24 @@
             </tbody>
           </table>
         </div>
+
+        <h2 style="margin-top:1.5rem;">Customer complaints</h2>
+        <div class="card">
+          <table class="data-table">
+            <thead><tr><th>Date</th><th>Customer</th><th>Subject</th><th>Message</th><th>Status</th></tr></thead>
+            <tbody>
+              <% if (allComplaints && allComplaints.length) { allComplaints.forEach(co => { %>
+                <tr>
+                  <td><%= co.created_at ? new Date(co.created_at).toLocaleString() : '-' %></td>
+                  <td><%= co.User ? co.User.name : '-' %><% if (co.User && co.User.email) { %> <span class="text-muted">(<%= co.User.email %>)</span><% } %></td>
+                  <td><%= co.subject %></td>
+                  <td style="max-width:280px;"><%= (co.message || '').substring(0, 120) %><%= (co.message && co.message.length > 120) ? '…' : '' %></td>
+                  <td><%= co.status %></td>
+                </tr>
+              <% }); } else { %><tr><td colspan="5">No complaints from customers yet</td></tr><% } %>
+            </tbody>
+          </table>
+        </div>
       </main>
     </div>
   </div>
