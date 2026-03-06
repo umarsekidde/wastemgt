@@ -15,9 +15,8 @@
   var map, marker, reverseGeocodeTimeout;
   function initMap() {
     map = L.map('pickupMap', { preferCanvas: true }).setView(KAMPALA, 13);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-      subdomains: 'abcd',
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       maxZoom: 19,
       minZoom: 2,
       updateWhenIdle: true,
