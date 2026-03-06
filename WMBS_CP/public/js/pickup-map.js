@@ -8,6 +8,7 @@
   var latEl = document.getElementById('pickupLat');
   var lngEl = document.getElementById('pickupLng');
   var addressEl = document.getElementById('pickupAddress');
+  var coordsEl = document.getElementById('pickupCoordinates');
   if (!mapEl || typeof L === 'undefined') return;
 
   var map = L.map('pickupMap').setView(KAMPALA, 13);
@@ -21,6 +22,7 @@
   function setLocation(lat, lng) {
     if (latEl) latEl.value = lat;
     if (lngEl) lngEl.value = lng;
+    if (coordsEl) coordsEl.value = lat + ', ' + lng;
     if (marker) marker.setLatLng([lat, lng]);
     else marker = L.marker([lat, lng]).addTo(map);
     map.setView([lat, lng], map.getZoom());
