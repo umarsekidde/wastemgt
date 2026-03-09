@@ -301,6 +301,49 @@
   animation: truckPulse 1.4s ease-out infinite;
 }
 
+/* Global dashboard header */
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border);
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  object-fit: contain;
+}
+
+.header-brand-text {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-nav .nav-link {
+  font-size: 0.95rem;
+  color: var(--text-main);
+}
+
+.header-nav .nav-link:hover {
+  text-decoration: underline;
+}
+
 @keyframes truckPulse {
   0% { transform: scale(1); opacity: 1; }
   100% { transform: scale(1.8); opacity: 0; }

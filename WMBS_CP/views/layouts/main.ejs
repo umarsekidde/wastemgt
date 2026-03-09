@@ -11,7 +11,10 @@
 </head>
 <body class="<%= typeof bodyClass !== 'undefined' ? bodyClass : '' %>" data-theme="<%= typeof darkMode !== 'undefined' && darkMode ? 'dark' : 'light' %>">
   <header class="dashboard-header">
-    <div class="header-brand"><%= typeof appName !== 'undefined' ? appName : 'WMBS' %></div>
+    <div class="header-brand">
+      <img src="/images/logo.png" alt="WMBS logo" class="header-logo">
+      <span class="header-brand-text"><%= typeof appName !== 'undefined' ? appName : 'WMBS' %></span>
+    </div>
     <nav class="header-nav">
       <%- typeof navItems !== 'undefined' ? navItems : '' %>
       <a href="/auth/logout" class="nav-link">Logout</a>
