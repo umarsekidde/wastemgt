@@ -137,6 +137,19 @@ a:hover {
 .auth-card-wide { max-width: 480px; }
 .auth-card h1 { margin-bottom: 1rem; font-size: 1.6rem; }
 
+.auth-logo-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
+.auth-logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  object-fit: contain;
+}
+
 .auth-form label {
   display: block;
   margin-top: 0.75rem;
