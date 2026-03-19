@@ -68,23 +68,46 @@
           </div>
 
           <div class="card">
+            <h2>Waste categories</h2>
+            <p class="text-muted">Use these categories when weighing and closing each assigned order.</p>
+            <ul class="job-list" style="margin-top: 0.75rem;">
+              <li class="job-item"><strong>Industrial Waste</strong><br><small>Factory/process waste. Keep hazardous materials separated and sealed.</small></li>
+              <li class="job-item"><strong>Commercial Waste</strong><br><small>Shops, offices, and markets waste. Avoid mixing with household bins.</small></li>
+              <li class="job-item"><strong>Household Waste</strong><br><small>Residential waste. Check for proper bagging before loading.</small></li>
+              <li class="job-item"><strong>Agricultural Waste</strong><br><small>Farm/produce residue. Keep organic loads separate for proper disposal.</small></li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="dashboard-section">
+          <div class="card">
             <h2>Assigned jobs</h2>
-            <p class="text-muted">Jobs currently assigned to you.</p>
+            <p class="text-muted">Click an assigned job to enter category and measured weight (KG).</p>
             <input type="hidden" id="csrfToken" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
             <ul class="job-list" style="margin-top: 0.75rem;">
               <% if (assignedJobs && assignedJobs.length) { assignedJobs.forEach(function(j) { %>
                 <li class="job-item" data-id="<%= j.id %>">
-                  <strong>#<%= j.id %></strong>
-                  <%= j.User ? j.User.name : '-' %>
+                  <button type="button" class="btn btn-sm btn-secondary job-toggle-btn">Order #<%= j.id %> - <%= j.User ? j.User.name : '-' %></button>
                   <% if (j.User && j.User.phone) { %>
-                    (<a href="tel:<%= j.User.phone %>"><%= j.User.phone %></a>)
+                    <br><small>Phone: <a href="tel:<%= j.User.phone %>"><%= j.User.phone %></a></small>
                   <% } %>
-                  - <%= j.address %>
+                  <br><small>Address: <%= j.address %></small>
                   <br><small><%= j.scheduled_date || '-' %> <%= j.scheduled_time_slot || '' %></small>
-                  <br><button type="button" class="btn btn-sm btn-success complete-job-btn">Mark completed</button>
-                  <form class="proof-form" style="display:none" enctype="multipart/form-data">
+                  <form class="proof-form" style="display:none; margin-top: 0.6rem;" enctype="multipart/form-data">
+                    <label>Waste category</label>
+                    <select name="waste_category" required style="margin-bottom:0.5rem;">
+                      <option value="">Select category</option>
+                      <option value="industrial">Industrial Waste</option>
+                      <option value="commercial">Commercial Waste</option>
+                      <option value="household">Household Waste</option>
+                      <option value="agricultural">Agricultural Waste</option>
+                    </select>
+                    <small class="category-notice text-muted" style="display:block; margin-bottom:0.5rem;">Choose a category to see a short handling notice.</small>
+                    <label>Measured weight (KG)</label>
+                    <input type="number" name="collected_weight_kg" min="0.1" step="0.01" placeholder="e.g. 12.50" required style="margin-bottom:0.5rem;">
+                    <label>Proof image (optional)</label>
                     <input type="file" name="proof_image" accept="image/*">
-                    <button type="submit" class="btn btn-sm btn-primary">Upload & complete</button>
+                    <button type="submit" class="btn btn-sm btn-primary" style="margin-top:0.5rem;">Save weight & complete</button>
                   </form>
                 </li>
               <% }); } else { %>

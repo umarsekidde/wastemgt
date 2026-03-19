@@ -60,6 +60,14 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true,
       defaultValue: 0
     },
+    waste_category: {
+      type: DataTypes.ENUM('industrial', 'commercial', 'household', 'agricultural'),
+      allowNull: true
+    },
+    collected_weight_kg: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true
+    },
     division_id: {
       type: DataTypes.INTEGER,
       allowNull: true,

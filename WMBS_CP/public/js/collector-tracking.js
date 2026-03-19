@@ -81,10 +81,29 @@
     });
   }
 
-  document.querySelectorAll('.complete-job-btn').forEach(function(btn) {
+  var categoryNotices = {
+    industrial: 'Industrial waste: keep hazardous and non-hazardous materials separated.',
+    commercial: 'Commercial waste: ensure no household waste is mixed in this batch.',
+    household: 'Household waste: confirm bags are sealed before recording final weight.',
+    agricultural: 'Agricultural waste: keep organic residue separated for proper handling.'
+  };
+
+  document.querySelectorAll('.job-toggle-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
-      var form = this.nextElementSibling;
+      var item = this.closest('.job-item');
+      if (!item) return;
+      var form = item.querySelector('.proof-form');
       if (form && form.classList.contains('proof-form')) form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    });
+  });
+
+  document.querySelectorAll('.proof-form select[name="waste_category"]').forEach(function(selectEl) {
+    selectEl.addEventListener('change', function() {
+      var form = this.closest('.proof-form');
+      if (!form) return;
+      var noticeEl = form.querySelector('.category-notice');
+      if (!noticeEl) return;
+      noticeEl.textContent = categoryNotices[this.value] || 'Choose a category to see a short handling notice.';
     });
   });
 
