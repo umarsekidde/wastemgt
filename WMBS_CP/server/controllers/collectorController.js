@@ -111,12 +111,16 @@ exports.completeJob = async (req, res) => {
     }
 
     const proofUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    const categoryLabel = wasteCategory.charAt(0).toUpperCase() + wasteCategory.slice(1);
+    const weightNote = `Category: ${categoryLabel} Waste | Weight: ${weight.toFixed(2)} KG`;
+    const mergedNotes = wasteRequest.notes && String(wasteRequest.notes).trim()
+      ? `${wasteRequest.notes}\n${weightNote}`
+      : weightNote;
     await wasteRequest.update({
       status: 'completed',
       completed_at: new Date(),
       proof_image_url: proofUrl,
-      waste_category: wasteCategory,
-      collected_weight_kg: weight
+      notes: mergedNotes
     });
     await db.Notification.create({ user_id: wasteRequest.customer_id, title: 'Collection completed', message: `Your waste collection #${requestId} has been completed.`, type: 'completion' });
     res.json({ success: true });
