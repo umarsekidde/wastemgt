@@ -7,6 +7,21 @@ function generateInvoiceNumber() {
   return 'INV-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8).toUpperCase();
 }
 
+async function notifyCollectorPaymentConfirmed(payment) {
+  if (!payment || !payment.request_id) return;
+  const wasteRequest = await db.WasteRequest.findByPk(payment.request_id, { attributes: ['id', 'assigned_collector_id'] });
+  if (!wasteRequest || !wasteRequest.assigned_collector_id) return;
+  const collector = await db.Collector.findByPk(wasteRequest.assigned_collector_id, { attributes: ['user_id'] });
+  if (!collector || !collector.user_id) return;
+  await db.Notification.create({
+    user_id: collector.user_id,
+    title: 'Payment confirmed',
+    message: `Payment for request #${wasteRequest.id} is confirmed. You can now complete this job.`,
+    type: 'payment',
+    link: '/collector'
+  }).catch(() => {});
+}
+
 exports.initializePayment = async (req, res) => {
   try {
     if (!flutterwaveService.isPaymentConfigured()) {
@@ -73,6 +88,7 @@ exports.verifyPayment = async (req, res) => {
     if (data.status === 'successful') {
       payment.status = 'success';
       await payment.save();
+      await notifyCollectorPaymentConfirmed(payment);
       await emailService.sendPaymentSuccess(req.user.email, payment.amount, payment.invoice_number).catch(() => {});
     } else {
       payment.status = 'failed';
@@ -82,5 +98,26 @@ exports.verifyPayment = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.redirect('/customer?payment=failed');
+  }
+};
+
+exports.confirmPayment = async (req, res) => {
+  try {
+    const requestId = parseInt(req.body.request_id, 10);
+    if (!requestId) return res.status(400).json({ success: false, message: 'request_id is required' });
+    const wasteRequest = await db.WasteRequest.findOne({ where: { id: requestId, customer_id: req.user.id } });
+    if (!wasteRequest) return res.status(404).json({ success: false, message: 'Request not found' });
+    const payment = await db.Payment.findOne({
+      where: { request_id: requestId, user_id: req.user.id },
+      order: [['created_at', 'DESC']]
+    });
+    if (!payment) return res.status(404).json({ success: false, message: 'No payment found for this request.' });
+    if (payment.status !== 'success') {
+      return res.status(400).json({ success: false, message: 'Payment is not yet confirmed. Please complete Mobile Money prompt first.' });
+    }
+    await notifyCollectorPaymentConfirmed(payment);
+    return res.json({ success: true, message: 'Payment confirmed successfully.' });
+  } catch (err) {
+    return res.status(400).json({ success: false, message: err.message || 'Unable to confirm payment' });
   }
 };

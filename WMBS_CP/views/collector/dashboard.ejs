@@ -66,23 +66,12 @@
             <div id="collectorMap" style="height:300px;width:100%;background:#eee;"></div>
             <p id="collectorMapError" class="auth-error" style="display:none;"></p>
           </div>
-
-          <div class="card">
-            <h2>Waste categories</h2>
-            <p class="text-muted">Use these categories when weighing and closing each assigned order.</p>
-            <ul class="job-list" style="margin-top: 0.75rem;">
-              <li class="job-item"><strong>Industrial Waste</strong><br><small>Factory/process waste. Keep hazardous materials separated and sealed.</small></li>
-              <li class="job-item"><strong>Commercial Waste</strong><br><small>Shops, offices, and markets waste. Avoid mixing with household bins.</small></li>
-              <li class="job-item"><strong>Household Waste</strong><br><small>Residential waste. Check for proper bagging before loading.</small></li>
-              <li class="job-item"><strong>Agricultural Waste</strong><br><small>Farm/produce residue. Keep organic loads separate for proper disposal.</small></li>
-            </ul>
-          </div>
         </section>
 
         <section class="dashboard-section">
           <div class="card">
             <h2>Assigned jobs</h2>
-            <p class="text-muted">Click an assigned job to enter category and measured weight (KG).</p>
+            <p class="text-muted">Enter weighed kilograms. System computes customer bill automatically.</p>
             <input type="hidden" id="csrfToken" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
             <ul class="job-list" style="margin-top: 0.75rem;">
               <% if (assignedJobs && assignedJobs.length) { assignedJobs.forEach(function(j) { %>
@@ -93,21 +82,18 @@
                   <% } %>
                   <br><small>Address: <%= j.address %></small>
                   <br><small><%= j.scheduled_date || '-' %> <%= j.scheduled_time_slot || '' %></small>
+                  <br><small>Category: <%= j.selectedCategory || '-' %></small>
+                  <br><small>Rate: UGX <%= Number(ratePerKg || 0).toFixed(2) %> / KG</small>
+                  <br><small>Payment: <%= j.paymentConfirmed ? 'Confirmed' : 'Pending' %></small>
                   <form class="proof-form" style="display:none; margin-top: 0.6rem;" enctype="multipart/form-data">
-                    <label>Waste category</label>
-                    <select name="waste_category" required style="margin-bottom:0.5rem;">
-                      <option value="">Select category</option>
-                      <option value="industrial">Industrial Waste</option>
-                      <option value="commercial">Commercial Waste</option>
-                      <option value="household">Household Waste</option>
-                      <option value="agricultural">Agricultural Waste</option>
-                    </select>
-                    <small class="category-notice text-muted" style="display:block; margin-bottom:0.5rem;">Choose a category to see a short handling notice.</small>
                     <label>Measured weight (KG)</label>
                     <input type="number" name="collected_weight_kg" min="0.1" step="0.01" placeholder="e.g. 12.50" required style="margin-bottom:0.5rem;">
                     <label>Proof image (optional)</label>
                     <input type="file" name="proof_image" accept="image/*">
-                    <button type="submit" class="btn btn-sm btn-primary" style="margin-top:0.5rem;">Save weight & complete</button>
+                    <button type="submit" class="btn btn-sm btn-primary record-weight-btn" style="margin-top:0.5rem;">Save weight & update bill</button>
+                    <button type="button" class="btn btn-sm btn-success confirm-complete-btn" data-paid="<%= j.paymentConfirmed ? '1' : '0' %>" style="margin-top:0.5rem;">
+                      Complete (Payment Confirmed)
+                    </button>
                   </form>
                 </li>
               <% }); } else { %>

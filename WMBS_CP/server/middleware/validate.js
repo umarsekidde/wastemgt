@@ -58,6 +58,7 @@ const schemas = {
     address: Joi.string().min(5).required(),
     latitude: Joi.number().min(-90).max(90).allow(null),
     longitude: Joi.number().min(-180).max(180).allow(null),
+    waste_category: Joi.string().valid('industrial', 'commercial', 'household', 'agricultural').required(),
     subscription_type: Joi.string().valid('monthly', 'weekly', 'on_demand').required(),
     scheduled_date: Joi.alternatives().try(Joi.date().iso(), Joi.string().allow('', null)).allow(null).optional(),
     scheduled_time_slot: Joi.string().allow('', null).optional(),
@@ -66,7 +67,7 @@ const schemas = {
 
   paymentInit: Joi.object({
     request_id: Joi.number().integer().required(),
-    amount: Joi.number().positive().required(),
+    amount: Joi.number().positive().optional(),
     phone: Joi.string().optional()
   }),
 

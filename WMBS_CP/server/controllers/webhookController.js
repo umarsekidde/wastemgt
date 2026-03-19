@@ -21,6 +21,19 @@ exports.flutterwaveWebhook = async (req, res) => {
       if (payment && payment.status === 'pending') {
         payment.status = 'success';
         await payment.save();
+        const wasteRequest = await db.WasteRequest.findByPk(payment.request_id, { attributes: ['id', 'assigned_collector_id'] });
+        if (wasteRequest && wasteRequest.assigned_collector_id) {
+          const collector = await db.Collector.findByPk(wasteRequest.assigned_collector_id, { attributes: ['user_id'] });
+          if (collector?.user_id) {
+            await db.Notification.create({
+              user_id: collector.user_id,
+              title: 'Payment confirmed',
+              message: `Payment for request #${wasteRequest.id} is confirmed. You can now complete this job.`,
+              type: 'payment',
+              link: '/collector'
+            }).catch(() => {});
+          }
+        }
         const user = await db.User.findByPk(payment.user_id);
         if (user) await emailService.sendPaymentSuccess(user.email, payment.amount, payment.invoice_number).catch(() => {});
       }

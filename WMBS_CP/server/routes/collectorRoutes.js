@@ -12,6 +12,7 @@ router.post('/api/update-location', validate(schemas.updateLocation), collectorC
 router.post('/api/start-route', collectorController.startRoute);
 router.post('/api/end-route', collectorController.endRoute);
 router.post('/api/complete-job/:id', collectorController.uploadProof, collectorController.completeJob);
+router.post('/api/confirm-complete/:id', collectorController.uploadProof, collectorController.confirmCompletion);
 router.post('/api/emergency', collectorController.reportEmergency);
 router.get('/api/location-history', collectorController.getMyLocationHistory);
 

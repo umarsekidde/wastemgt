@@ -69,6 +69,14 @@
             <input type="text" id="pickupCoordinates" readonly class="form-control" placeholder="Latitude, Longitude" style="margin-bottom:12px;">
             <label>Address</label>
             <input type="text" name="address" id="pickupAddress" required class="form-control" placeholder="Street, area, or set by clicking the map">
+            <label>Waste category</label>
+            <select name="waste_category" class="form-control" required>
+              <option value="">Select category</option>
+              <option value="industrial">Industrial Waste</option>
+              <option value="commercial">Commercial Waste</option>
+              <option value="household">Household Waste</option>
+              <option value="agricultural">Agricultural Waste</option>
+            </select>
             <label>Subscription</label>
             <select name="subscription_type" class="form-control">
               <option value="monthly">Monthly - 50000 UGX</option>
@@ -85,17 +93,33 @@
           <h2>My requests</h2>
           <div class="card">
             <table>
-              <thead><tr><th>ID</th><th>Address</th><th>Date</th><th>Status</th><th>Action</th></tr></thead>
+              <thead><tr><th>ID</th><th>Address</th><th>Date</th><th>Status</th><th>Bill (UGX)</th><th>Payment</th><th>Action</th></tr></thead>
               <tbody>
                 <% if (requests && requests.length) { requests.forEach(function(r) { %>
                   <tr>
                     <td><%= r.id %></td>
                     <td><%= r.address %></td>
                     <td><%= r.scheduled_date || '-' %></td>
-                    <td><%= r.status %></td>
-                    <td><button type="button" class="btn btn-sm cancel-request" data-id="<%= r.id %>">Cancel</button> <button type="button" class="btn btn-sm pay-request" data-id="<%= r.id %>" data-amount="<%= r.amount %>">Pay</button></td>
+                    <td>
+                      <%= r.status === 'pending' ? 'Pending - request sent to admin' : '' %>
+                      <%= r.status === 'assigned' ? 'Scheduled - assigned to collector' : '' %>
+                      <%= r.status === 'in_progress' ? 'In Progress - collector on the way / weighing' : '' %>
+                      <%= r.status === 'completed' ? 'Complete - payment done and collection closed' : '' %>
+                      <%= r.status === 'cancelled' ? 'Cancelled' : '' %>
+                    </td>
+                    <td><%= r.amount ? Number(r.amount).toFixed(2) : '0.00' %></td>
+                    <td><%= (paymentStatusByRequest && paymentStatusByRequest[r.id]) ? paymentStatusByRequest[r.id] : '-' %></td>
+                    <td>
+                      <% if (['pending', 'assigned'].includes(r.status)) { %>
+                        <button type="button" class="btn btn-sm cancel-request" data-id="<%= r.id %>">Cancel</button>
+                      <% } %>
+                      <% if (r.status === 'in_progress' && Number(r.amount || 0) > 0) { %>
+                        <button type="button" class="btn btn-sm btn-primary pay-request" data-id="<%= r.id %>" data-amount="<%= r.amount %>">Pay with Mobile Money</button>
+                        <button type="button" class="btn btn-sm btn-secondary confirm-payment" data-id="<%= r.id %>">Confirm Payment</button>
+                      <% } %>
+                    </td>
                   </tr>
-                <% }); } else { %><tr><td colspan="5">No requests</td></tr><% } %>
+                <% }); } else { %><tr><td colspan="7">No requests</td></tr><% } %>
               </tbody>
             </table>
           </div>

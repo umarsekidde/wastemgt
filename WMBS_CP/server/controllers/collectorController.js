@@ -6,6 +6,7 @@ const fs = require('fs');
 
 const uploadDir = path.join(__dirname, '../../public/uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+const RATE_PER_KG = parseFloat(process.env.WASTE_RATE_PER_KG || '1000');
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
@@ -36,13 +37,34 @@ exports.dashboard = async (req, res) => {
     ]);
 
     const totalEarnings = earningsResult[0]?.total ? parseFloat(earningsResult[0].total) : 0;
+    const jobIds = assignedJobs.map((j) => j.id);
+    const successPayments = jobIds.length
+      ? await db.Payment.findAll({
+          where: { request_id: { [Op.in]: jobIds }, status: 'success' },
+          attributes: ['request_id'],
+          order: [['created_at', 'DESC']]
+        })
+      : [];
+    const paidMap = successPayments.reduce((acc, p) => { acc[p.request_id] = true; return acc; }, {});
+    const jobsWithBilling = assignedJobs.map((j) => {
+      const notesText = j.notes || '';
+      const weightMatch = String(notesText).match(/Weight:\s*([0-9.]+)\s*KG/i);
+      const categoryMatch = String(notesText).match(/Waste Category:\s*([a-z_]+)/i);
+      return {
+        ...j.toJSON(),
+        paymentConfirmed: !!paidMap[j.id],
+        measuredWeightKg: weightMatch ? weightMatch[1] : null,
+        selectedCategory: categoryMatch ? categoryMatch[1] : null
+      };
+    });
 
     res.render('collector/dashboard', {
       title: 'Collector Dashboard',
       collector,
-      assignedJobs,
+      assignedJobs: jobsWithBilling,
       completedToday,
-      totalEarnings
+      totalEarnings,
+      ratePerKg: RATE_PER_KG
     });
   } catch (err) {
     console.error(err);
@@ -100,29 +122,55 @@ exports.completeJob = async (req, res) => {
     const wasteRequest = await db.WasteRequest.findOne({ where: { id: requestId, assigned_collector_id: collector.id } });
     if (!wasteRequest) return res.status(404).json({ success: false, message: 'Job not found' });
 
-    const wasteCategory = req.body.waste_category ? String(req.body.waste_category).toLowerCase() : null;
-    const allowedCategories = ['industrial', 'commercial', 'household', 'agricultural'];
-    if (!wasteCategory || !allowedCategories.includes(wasteCategory)) {
-      return res.status(400).json({ success: false, message: 'Please select a valid waste category.' });
-    }
     const weight = parseFloat(req.body.collected_weight_kg);
     if (!Number.isFinite(weight) || weight <= 0) {
       return res.status(400).json({ success: false, message: 'Please enter a valid waste weight in KG.' });
     }
 
-    const proofUrl = req.file ? `/uploads/${req.file.filename}` : null;
-    const categoryLabel = wasteCategory.charAt(0).toUpperCase() + wasteCategory.slice(1);
-    const weightNote = `Category: ${categoryLabel} Waste | Weight: ${weight.toFixed(2)} KG`;
+    const computedAmount = Number((weight * RATE_PER_KG).toFixed(2));
+    const weightNote = `Weight: ${weight.toFixed(2)} KG @ UGX ${RATE_PER_KG.toFixed(2)}/KG => UGX ${computedAmount.toFixed(2)}`;
     const mergedNotes = wasteRequest.notes && String(wasteRequest.notes).trim()
       ? `${wasteRequest.notes}\n${weightNote}`
       : weightNote;
     await wasteRequest.update({
-      status: 'completed',
-      completed_at: new Date(),
-      proof_image_url: proofUrl,
+      status: 'in_progress',
+      amount: computedAmount,
       notes: mergedNotes
     });
-    await db.Notification.create({ user_id: wasteRequest.customer_id, title: 'Collection completed', message: `Your waste collection #${requestId} has been completed.`, type: 'completion' });
+    await db.Notification.create({
+      user_id: wasteRequest.customer_id,
+      title: 'Waste weighed - payment required',
+      message: `Your request #${requestId} has been weighed at ${weight.toFixed(2)} KG. Amount due: UGX ${computedAmount.toFixed(2)}. Please pay with Mobile Money and confirm payment.`,
+      type: 'payment',
+      link: '/customer'
+    });
+    res.json({ success: true, amount: computedAmount });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+exports.confirmCompletion = async (req, res) => {
+  try {
+    const collector = await db.Collector.findOne({ where: { user_id: req.user.id } });
+    if (!collector) return res.status(403).json({ success: false });
+    const requestId = req.params.id;
+    const wasteRequest = await db.WasteRequest.findOne({
+      where: { id: requestId, assigned_collector_id: collector.id, status: { [Op.in]: ['assigned', 'in_progress'] } }
+    });
+    if (!wasteRequest) return res.status(404).json({ success: false, message: 'Job not found' });
+
+    const paid = await db.Payment.findOne({ where: { request_id: requestId, status: 'success' }, order: [['created_at', 'DESC']] });
+    if (!paid) return res.status(400).json({ success: false, message: 'Payment not yet confirmed by customer.' });
+
+    const proofUrl = req.file ? `/uploads/${req.file.filename}` : wasteRequest.proof_image_url;
+    await wasteRequest.update({ status: 'completed', completed_at: new Date(), proof_image_url: proofUrl });
+    await db.Notification.create({
+      user_id: wasteRequest.customer_id,
+      title: 'Collection completed',
+      message: `Your waste collection #${requestId} has been completed successfully.`,
+      type: 'completion'
+    });
     res.json({ success: true });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });

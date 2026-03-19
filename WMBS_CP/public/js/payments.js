@@ -16,6 +16,7 @@
         addressVal = 'Location selected on map (' + latEl.value + ', ' + lngEl.value + ')';
       var data = {
         address: addressVal,
+        waste_category: form.waste_category.value,
         subscription_type: form.subscription_type.value,
         scheduled_date: form.scheduled_date.value || null,
         scheduled_time_slot: form.scheduled_time_slot ? form.scheduled_time_slot.value : null,
@@ -94,6 +95,32 @@
         if (d.success && d.link) window.location.href = d.link;
         else alert(d.message || 'Payment failed');
       }).catch(function(e) { alert(e.message || 'Payment failed'); });
+    });
+  });
+
+  document.querySelectorAll('.confirm-payment').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var requestId = this.getAttribute('data-id');
+      if (!requestId) return;
+      var csrf = getCsrf();
+      fetch('/payment/confirm', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'csrf-token': csrf
+        },
+        body: JSON.stringify({ request_id: parseInt(requestId, 10), _csrf: csrf })
+      }).then(function(r) {
+        return r.json().then(function(d) {
+          if (!r.ok) throw new Error(d.message || 'Payment confirmation failed');
+          return d;
+        });
+      }).then(function(d) {
+        alert(d.message || 'Payment confirmed');
+        location.reload();
+      }).catch(function(e) { alert(e.message || 'Payment confirmation failed'); });
     });
   });
 })();

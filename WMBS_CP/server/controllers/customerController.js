@@ -17,6 +17,19 @@ exports.dashboard = async (req, res) => {
     ]);
 
     const nextCollection = requests.find((r) => ['pending', 'assigned', 'in_progress'].includes(r.status) && r.scheduled_date >= new Date().toISOString().split('T')[0]);
+    const requestIds = requests.map((r) => r.id);
+    let paymentStatusByRequest = {};
+    if (requestIds.length) {
+      const requestPayments = await db.Payment.findAll({
+        where: { user_id: req.user.id, request_id: { [Op.in]: requestIds } },
+        attributes: ['request_id', 'status', 'created_at'],
+        order: [['created_at', 'DESC']]
+      });
+      paymentStatusByRequest = requestPayments.reduce((acc, p) => {
+        if (acc[p.request_id] == null) acc[p.request_id] = p.status;
+        return acc;
+      }, {});
+    }
 
     res.render('customer/dashboard', {
       title: 'Customer Dashboard',
@@ -24,7 +37,8 @@ exports.dashboard = async (req, res) => {
       payments,
       notifications,
       plans,
-      nextCollection
+      nextCollection,
+      paymentStatusByRequest
     });
   } catch (err) {
     console.error(err);
@@ -51,6 +65,9 @@ exports.requestPickup = async (req, res) => {
     const addressStr = req.body.address.trim();
     const latFromBody = req.body.latitude != null && req.body.latitude !== '' ? req.body.latitude : null;
     const lngFromBody = req.body.longitude != null && req.body.longitude !== '' ? req.body.longitude : null;
+    const wasteCategory = String(req.body.waste_category || '').toLowerCase();
+    const categoryNote = `Waste Category: ${wasteCategory}`;
+    const extraNotes = req.body.notes && String(req.body.notes).trim() ? String(req.body.notes).trim() : '';
     const request = await db.WasteRequest.create({
       customer_id: req.user.id,
       address: addressStr,
@@ -59,7 +76,7 @@ exports.requestPickup = async (req, res) => {
       subscription_type: req.body.subscription_type,
       scheduled_date: scheduledDate,
       scheduled_time_slot: scheduledTimeSlot,
-      notes: req.body.notes && String(req.body.notes).trim() ? req.body.notes : null,
+      notes: extraNotes ? `${categoryNote}\n${extraNotes}` : categoryNote,
       status: 'pending',
       amount,
       division_id: divisionId

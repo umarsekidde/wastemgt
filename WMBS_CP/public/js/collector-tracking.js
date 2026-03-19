@@ -81,29 +81,12 @@
     });
   }
 
-  var categoryNotices = {
-    industrial: 'Industrial waste: keep hazardous and non-hazardous materials separated.',
-    commercial: 'Commercial waste: ensure no household waste is mixed in this batch.',
-    household: 'Household waste: confirm bags are sealed before recording final weight.',
-    agricultural: 'Agricultural waste: keep organic residue separated for proper handling.'
-  };
-
   document.querySelectorAll('.job-toggle-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
       var item = this.closest('.job-item');
       if (!item) return;
       var form = item.querySelector('.proof-form');
       if (form && form.classList.contains('proof-form')) form.style.display = form.style.display === 'none' ? 'block' : 'none';
-    });
-  });
-
-  document.querySelectorAll('.proof-form select[name="waste_category"]').forEach(function(selectEl) {
-    selectEl.addEventListener('change', function() {
-      var form = this.closest('.proof-form');
-      if (!form) return;
-      var noticeEl = form.querySelector('.category-notice');
-      if (!noticeEl) return;
-      noticeEl.textContent = categoryNotices[this.value] || 'Choose a category to see a short handling notice.';
     });
   });
 
@@ -115,7 +98,31 @@
       if (!id) return;
       var fd = new FormData(form);
       fd.append('_csrf', document.getElementById('csrfToken').value);
-      fetch('/collector/api/complete-job/' + id, { method: 'POST', credentials: 'include', body: fd }).then(function(r) { return r.json(); }).then(function(d) { if (d.success) location.reload(); else alert(d.message || 'Failed'); }).catch(function() { alert('Failed'); });
+      fetch('/collector/api/complete-job/' + id, { method: 'POST', credentials: 'include', body: fd }).then(function(r) { return r.json(); }).then(function(d) {
+        if (d.success) {
+          alert('Weight recorded. Bill updated for customer.');
+          location.reload();
+        } else alert(d.message || 'Failed');
+      }).catch(function() { alert('Failed'); });
+    });
+  });
+
+  document.querySelectorAll('.confirm-complete-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      if (this.getAttribute('data-paid') !== '1') {
+        alert('Customer payment is not confirmed yet.');
+        return;
+      }
+      var form = this.closest('.proof-form');
+      var item = this.closest('.job-item');
+      var id = item ? item.dataset.id : null;
+      if (!id || !form) return;
+      var fd = new FormData(form);
+      fd.append('_csrf', document.getElementById('csrfToken').value);
+      fetch('/collector/api/confirm-complete/' + id, { method: 'POST', credentials: 'include', body: fd }).then(function(r) { return r.json(); }).then(function(d) {
+        if (d.success) location.reload();
+        else alert(d.message || 'Failed');
+      }).catch(function() { alert('Failed'); });
     });
   });
 
