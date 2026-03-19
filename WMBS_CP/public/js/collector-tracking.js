@@ -127,8 +127,9 @@
   }
 
   setInterval(function() {
+    if (document.hidden) return;
     if (watchId != null && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(onPosition, function() {}, { enableHighAccuracy: true, maximumAge: 5000 });
     }
-  }, 5000);
+  }, 15000);
 })();

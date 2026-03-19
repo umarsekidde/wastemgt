@@ -1,5 +1,6 @@
 /* WMBS maps use Leaflet (OpenStreetMap). No API key required. */
 var KAMPALA = [0.3476, 32.5825];
+var MAP_POLL_INTERVAL_MS = 15000;
 
 function initSuperAdminMap(containerId, initialTrucks, divisionFilterEl, lastUpdateEl) {
   var container = document.getElementById(containerId);
@@ -9,7 +10,11 @@ function initSuperAdminMap(containerId, initialTrucks, divisionFilterEl, lastUpd
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
   }).addTo(map);
   var markers = {};
+  var isFetching = false;
+  var poller = null;
   function fetchTrucks() {
+    if (isFetching || document.hidden) return;
+    isFetching = true;
     var url = '/superadmin/api/truck-locations';
     if (divisionFilterEl && divisionFilterEl.value) url += '?division_id=' + divisionFilterEl.value;
     fetch(url, { credentials: 'include' }).then(function(r) { return r.json(); }).then(function(data) {
@@ -27,11 +32,15 @@ function initSuperAdminMap(containerId, initialTrucks, divisionFilterEl, lastUpd
         }
       });
       if (lastUpdateEl) lastUpdateEl.textContent = 'Last updated: ' + new Date().toLocaleTimeString();
-    }).catch(function() {});
+    }).catch(function() {}).finally(function() { isFetching = false; });
   }
   if (divisionFilterEl) divisionFilterEl.addEventListener('change', fetchTrucks);
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) fetchTrucks();
+  });
   fetchTrucks();
-  setInterval(fetchTrucks, 5000);
+  poller = setInterval(fetchTrucks, MAP_POLL_INTERVAL_MS);
+  void poller;
 }
 
 function initAdminMap(containerId, lastUpdateEl) {
@@ -44,6 +53,8 @@ function initAdminMap(containerId, lastUpdateEl) {
 
   var truckMarkers = {};
   var pickupMarkers = {};
+  var isFetching = false;
+  var poller = null;
 
   var customerIcon = L.divIcon({
     className: 'wmbs-pickup-marker',
@@ -53,6 +64,8 @@ function initAdminMap(containerId, lastUpdateEl) {
   });
 
   function fetchLocations() {
+    if (isFetching || document.hidden) return;
+    isFetching = true;
     fetch('/admin/api/truck-locations', { credentials: 'include' }).then(function(r) { return r.json(); }).then(function(data) {
       if (!data.success) return;
 
@@ -98,9 +111,13 @@ function initAdminMap(containerId, lastUpdateEl) {
       }
 
       if (lastUpdateEl) lastUpdateEl.textContent = 'Last updated: ' + new Date().toLocaleTimeString();
-    }).catch(function() {});
+    }).catch(function() {}).finally(function() { isFetching = false; });
   }
 
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) fetchLocations();
+  });
   fetchLocations();
-  setInterval(fetchLocations, 5000);
+  poller = setInterval(fetchLocations, MAP_POLL_INTERVAL_MS);
+  void poller;
 }
