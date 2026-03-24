@@ -12,6 +12,15 @@ function calculateEstimatedAmount(weightKg) {
   return Math.ceil(weightKg / 50) * 5000;
 }
 
+function isFutureScheduledDate(scheduledDate) {
+  if (!scheduledDate) return false;
+  const today = new Date();
+  const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const reqDate = new Date(scheduledDate);
+  const reqDateOnly = new Date(reqDate.getFullYear(), reqDate.getMonth(), reqDate.getDate());
+  return reqDateOnly > todayOnly;
+}
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => cb(null, `proof-${Date.now()}-${Math.random().toString(36).slice(2)}${path.extname(file.originalname) || '.jpg'}`)
@@ -26,7 +35,7 @@ exports.dashboard = async (req, res) => {
     });
     if (!collector) return res.status(403).render('errors/403', { title: 'Collector profile not found' });
 
-    const [assignedJobs, completedToday, earningsResult] = await Promise.all([
+    const [collectorJobs, completedToday, earningsResult] = await Promise.all([
       db.WasteRequest.findAll({
         where: { assigned_collector_id: collector.id, status: { [Op.in]: ['assigned', 'in_progress'] } },
         include: [{ model: db.User, as: 'User', attributes: ['name', 'phone', 'address'] }],
@@ -41,7 +50,7 @@ exports.dashboard = async (req, res) => {
     ]);
 
     const totalEarnings = earningsResult[0]?.total ? parseFloat(earningsResult[0].total) : 0;
-    const jobIds = assignedJobs.map((j) => j.id);
+    const jobIds = collectorJobs.map((j) => j.id);
     const successPayments = jobIds.length
       ? await db.Payment.findAll({
           where: { request_id: { [Op.in]: jobIds }, status: 'success' },
@@ -50,22 +59,28 @@ exports.dashboard = async (req, res) => {
         })
       : [];
     const paidMap = successPayments.reduce((acc, p) => { acc[p.request_id] = true; return acc; }, {});
-    const jobsWithBilling = assignedJobs.map((j) => {
+    const jobsWithBilling = collectorJobs.map((j) => {
       const notesText = j.notes || '';
       const weightMatch = String(notesText).match(/Weight:\s*([0-9.]+)\s*KG/i);
       const categoryMatch = String(notesText).match(/Waste Category:\s*([a-z_]+)/i);
+      const isFuture = j.status === 'assigned' && isFutureScheduledDate(j.scheduled_date);
       return {
         ...j.toJSON(),
         paymentConfirmed: !!paidMap[j.id],
         measuredWeightKg: weightMatch ? weightMatch[1] : null,
-        selectedCategory: categoryMatch ? categoryMatch[1] : null
+        selectedCategory: categoryMatch ? categoryMatch[1] : null,
+        isFutureScheduled: isFuture
       };
     });
+    const activeJobs = jobsWithBilling.filter((j) => !j.isFutureScheduled || j.status === 'in_progress');
+    const upcomingJobs = jobsWithBilling.filter((j) => j.isFutureScheduled && j.status !== 'in_progress');
 
     res.render('collector/dashboard', {
       title: 'Collector Dashboard',
       collector,
-      assignedJobs: jobsWithBilling,
+      assignedJobs: activeJobs,
+      upcomingJobs,
+      allAssignedJobs: jobsWithBilling,
       completedToday,
       totalEarnings
     });
@@ -124,6 +139,9 @@ exports.completeJob = async (req, res) => {
     const requestId = req.params.id;
     const wasteRequest = await db.WasteRequest.findOne({ where: { id: requestId, assigned_collector_id: collector.id } });
     if (!wasteRequest) return res.status(404).json({ success: false, message: 'Job not found' });
+    if (wasteRequest.status === 'assigned' && isFutureScheduledDate(wasteRequest.scheduled_date)) {
+      return res.status(400).json({ success: false, message: 'This request is scheduled for a future date and is not active yet.' });
+    }
 
     const weight = parseFloat(req.body.collected_weight_kg);
     if (!Number.isFinite(weight) || weight <= 0) {
@@ -162,6 +180,9 @@ exports.confirmCompletion = async (req, res) => {
       where: { id: requestId, assigned_collector_id: collector.id, status: { [Op.in]: ['assigned', 'in_progress'] } }
     });
     if (!wasteRequest) return res.status(404).json({ success: false, message: 'Job not found' });
+    if (wasteRequest.status === 'assigned' && isFutureScheduledDate(wasteRequest.scheduled_date)) {
+      return res.status(400).json({ success: false, message: 'This request is scheduled for a future date and is not active yet.' });
+    }
 
     const paid = await db.Payment.findOne({ where: { request_id: requestId, status: 'success' }, order: [['created_at', 'DESC']] });
     if (!paid) return res.status(400).json({ success: false, message: 'Payment not yet confirmed by customer.' });
