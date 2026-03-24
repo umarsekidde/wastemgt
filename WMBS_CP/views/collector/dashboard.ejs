@@ -110,6 +110,18 @@
     </div>
   </div>
 
+  <script>
+    window.collectorAssignedRequests = <%- JSON.stringify((assignedJobs || []).map(function(j) {
+      return {
+        id: j.id,
+        address: j.address || '',
+        status: j.status || '',
+        customerName: j.User && j.User.name ? j.User.name : 'Customer',
+        latitude: j.latitude,
+        longitude: j.longitude
+      };
+    })) %>;
+  </script>
   <script src="/js/common.js"></script>
   <script src="/js/dashboard-ui.js"></script>
   <script src="/js/collector-tracking.js"></script>

@@ -6,6 +6,7 @@
   var watchId = null;
   var map = null;
   var myMarker = null;
+  var requestMarkers = [];
   var pathCoordinates = [];
 
   function sendLocation(lat, lng, speed, heading) {
@@ -47,10 +48,38 @@
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(map);
+
+    // Plot assigned request pickup points for this collector.
+    var assignedRequests = Array.isArray(window.collectorAssignedRequests) ? window.collectorAssignedRequests : [];
+    var requestBounds = [];
+    assignedRequests.forEach(function(req) {
+      var lat = parseFloat(req.latitude);
+      var lng = parseFloat(req.longitude);
+      if (isNaN(lat) || isNaN(lng)) return;
+      var marker = L.circleMarker([lat, lng], {
+        radius: 7,
+        color: '#0f766e',
+        fillColor: '#14b8a6',
+        fillOpacity: 0.85,
+        weight: 2
+      }).addTo(map);
+      marker.bindTooltip(
+        'Request #' + req.id + ' - ' + (req.customerName || 'Customer') + '<br>' +
+        (req.address || '') + '<br>Status: ' + (req.status || '-'),
+        { permanent: false, direction: 'top' }
+      );
+      requestMarkers.push(marker);
+      requestBounds.push([lat, lng]);
+    });
+
+    if (requestBounds.length) {
+      map.fitBounds(requestBounds, { padding: [30, 30], maxZoom: 14 });
+    }
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(function(p) {
         var lat = p.coords.latitude, lng = p.coords.longitude;
-        map.setView([lat, lng], 15);
+        if (!requestBounds.length) map.setView([lat, lng], 15);
         myMarker = L.marker([lat, lng]).addTo(map);
         myMarker.bindTooltip('My truck', { permanent: false });
       }, function() {});
