@@ -7,6 +7,9 @@
   var map = null;
   var myMarker = null;
   var requestMarkers = [];
+  var requestMarkerById = {};
+  var routeLine = null;
+  var currentPosition = null;
   var pathCoordinates = [];
 
   function sendLocation(lat, lng, speed, heading) {
@@ -28,6 +31,7 @@
   function onPosition(pos) {
     var lat = pos.coords.latitude;
     var lng = pos.coords.longitude;
+    currentPosition = { lat: lat, lng: lng };
     var speed = pos.coords.speed != null ? pos.coords.speed * 3.6 : 0;
     var heading = pos.coords.heading;
     sendLocation(lat, lng, speed, heading);
@@ -69,6 +73,7 @@
         { permanent: false, direction: 'top' }
       );
       requestMarkers.push(marker);
+      requestMarkerById[String(req.id)] = marker;
       requestBounds.push([lat, lng]);
     });
 
@@ -79,11 +84,44 @@
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(function(p) {
         var lat = p.coords.latitude, lng = p.coords.longitude;
+        currentPosition = { lat: lat, lng: lng };
         if (!requestBounds.length) map.setView([lat, lng], 15);
         myMarker = L.marker([lat, lng]).addTo(map);
         myMarker.bindTooltip('My truck', { permanent: false });
       }, function() {});
     }
+  }
+
+  function drawRouteToRequest(targetLat, targetLng) {
+    if (!map) return;
+    if (!currentPosition) {
+      alert('Current location not ready yet. Start route or allow location access first.');
+      return;
+    }
+    var fromLng = currentPosition.lng;
+    var fromLat = currentPosition.lat;
+    var osrmUrl = 'https://router.project-osrm.org/route/v1/driving/' +
+      encodeURIComponent(fromLng) + ',' + encodeURIComponent(fromLat) + ';' +
+      encodeURIComponent(targetLng) + ',' + encodeURIComponent(targetLat) +
+      '?overview=full&geometries=geojson';
+
+    fetch(osrmUrl).then(function(r) { return r.json(); }).then(function(data) {
+      if (routeLine) map.removeLayer(routeLine);
+      var points = null;
+      if (data && data.routes && data.routes.length && data.routes[0].geometry && data.routes[0].geometry.coordinates) {
+        points = data.routes[0].geometry.coordinates.map(function(c) { return [c[1], c[0]]; });
+      } else {
+        points = [[fromLat, fromLng], [targetLat, targetLng]];
+      }
+      routeLine = L.polyline(points, { color: '#2563eb', weight: 5, opacity: 0.85 }).addTo(map);
+      map.fitBounds(routeLine.getBounds(), { padding: [30, 30], maxZoom: 16 });
+      if (statusEl) statusEl.textContent = 'GPS: Route ready';
+    }).catch(function() {
+      if (routeLine) map.removeLayer(routeLine);
+      routeLine = L.polyline([[fromLat, fromLng], [targetLat, targetLng]], { color: '#2563eb', weight: 4, dashArray: '8,8' }).addTo(map);
+      map.fitBounds(routeLine.getBounds(), { padding: [30, 30], maxZoom: 16 });
+      if (statusEl) statusEl.textContent = 'GPS: Route preview (straight line)';
+    });
   }
 
   if (startBtn) {
@@ -109,6 +147,19 @@
       fetch('/collector/api/end-route', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' } }).then(function(r) { return r.json(); }).catch(function() {});
     });
   }
+
+  document.querySelectorAll('.route-job-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var id = this.getAttribute('data-id');
+      var lat = parseFloat(this.getAttribute('data-lat'));
+      var lng = parseFloat(this.getAttribute('data-lng'));
+      if (isNaN(lat) || isNaN(lng)) return alert('This request has no valid map location.');
+      initMap();
+      drawRouteToRequest(lat, lng);
+      var marker = requestMarkerById[id];
+      if (marker && marker.openTooltip) marker.openTooltip();
+    });
+  });
 
   document.querySelectorAll('.job-toggle-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {

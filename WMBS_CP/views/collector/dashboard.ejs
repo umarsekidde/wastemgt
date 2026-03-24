@@ -85,6 +85,12 @@
                   <br><small>Category: <%= j.selectedCategory || '-' %></small>
                   <br><small>Pricing: 0-50KG=5000, 51-100KG=10000, 101-150KG=15000, 151-200KG=20000, then +5000 per 50KG</small>
                   <br><small>Payment: <%= j.paymentConfirmed ? 'Confirmed' : 'Pending' %></small>
+                  <% if (j.latitude && j.longitude) { %>
+                    <br><button type="button" class="btn btn-sm btn-secondary route-job-btn" data-id="<%= j.id %>" data-lat="<%= j.latitude %>" data-lng="<%= j.longitude %>">Follow route</button>
+                    <a class="btn btn-sm btn-primary" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=<%= j.latitude %>,<%= j.longitude %>&travelmode=driving">Open in Google Maps</a>
+                  <% } else { %>
+                    <br><small class="text-muted">No map coordinates for this request.</small>
+                  <% } %>
                   <form class="proof-form" style="display:none; margin-top: 0.6rem;" enctype="multipart/form-data">
                     <label>Measured weight (KG)</label>
                     <input type="number" name="collected_weight_kg" min="0.1" step="0.01" placeholder="e.g. 12.50" required style="margin-bottom:0.5rem;">
@@ -117,6 +123,10 @@
                   <br><small>Address: <%= j.address %></small>
                   <br><small>Scheduled: <%= j.scheduled_date || '-' %> <%= j.scheduled_time_slot || '' %></small>
                   <br><small>Status: Scheduled (not active yet)</small>
+                  <% if (j.latitude && j.longitude) { %>
+                    <br><button type="button" class="btn btn-sm btn-secondary route-job-btn" data-id="<%= j.id %>" data-lat="<%= j.latitude %>" data-lng="<%= j.longitude %>">Preview route</button>
+                    <a class="btn btn-sm btn-primary" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=<%= j.latitude %>,<%= j.longitude %>&travelmode=driving">Open in Google Maps</a>
+                  <% } %>
                 </li>
               <% }); } else { %>
                 <li>No upcoming jobs.</li>
