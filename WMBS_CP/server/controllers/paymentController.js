@@ -28,9 +28,13 @@ exports.initializePayment = async (req, res) => {
       return res.status(503).json({ success: false, message: flutterwaveService.NOT_CONFIGURED_MESSAGE });
     }
 
-    const { request_id, amount, phone } = req.body;
+    const { request_id, amount, phone, email, payment_method } = req.body;
     const wasteRequest = await db.WasteRequest.findOne({ where: { id: request_id, customer_id: req.user.id } });
     if (!wasteRequest) return res.status(404).json({ success: false, message: 'Request not found' });
+    const normalizedPhone = String(phone || req.user.phone || '').trim();
+    if (!normalizedPhone) return res.status(400).json({ success: false, message: 'Phone number is required for Mobile Money.' });
+    const customerEmail = String(email || req.user.email || '').trim();
+    const selectedMethod = payment_method === 'airtel_money' ? 'airtel_money' : 'mtn_momo';
 
     const amt = parseFloat(amount) || parseFloat(wasteRequest.amount) || 0;
     if (amt <= 0) return res.status(400).json({ success: false, message: 'Invalid amount' });
@@ -40,8 +44,8 @@ exports.initializePayment = async (req, res) => {
       const init = await flutterwaveService.initializePayment({
         tx_ref: existingPending.flutterwave_tx_id || existingPending.id + '-' + Date.now(),
         amount: amt,
-        customer: { email: req.user.email, name: req.user.name, phone: req.user.phone || phone },
-        meta: { request_id, user_id: req.user.id, payment_id: existingPending.id }
+        customer: { email: customerEmail, name: req.user.name, phone: normalizedPhone },
+        meta: { request_id, user_id: req.user.id, payment_id: existingPending.id, payment_method: selectedMethod }
       });
       return res.json({ success: true, link: init.link, paymentId: existingPending.id });
     }
@@ -53,15 +57,15 @@ exports.initializePayment = async (req, res) => {
       amount: amt,
       status: 'pending',
       invoice_number: invoiceNumber,
-      payment_method: 'mobilemoneyuganda'
+      payment_method: selectedMethod
     });
 
     const txRef = payment.id + '-' + uuidv4().slice(0, 8);
     const init = await flutterwaveService.initializePayment({
       tx_ref: txRef,
       amount: amt,
-      customer: { email: req.user.email, name: req.user.name, phone: req.user.phone || phone },
-      meta: { request_id, user_id: req.user.id, payment_id: payment.id }
+      customer: { email: customerEmail, name: req.user.name, phone: normalizedPhone },
+      meta: { request_id, user_id: req.user.id, payment_id: payment.id, payment_method: selectedMethod }
     });
 
     payment.flutterwave_tx_id = txRef;

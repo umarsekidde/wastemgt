@@ -68,7 +68,9 @@ const schemas = {
   paymentInit: Joi.object({
     request_id: Joi.number().integer().required(),
     amount: Joi.number().positive().optional(),
-    phone: Joi.string().optional()
+    phone: Joi.string().min(10).max(15).required(),
+    email: Joi.string().email().allow('', null).optional(),
+    payment_method: Joi.string().valid('mtn_momo', 'airtel_money').required()
   }),
 
   complaint: Joi.object({

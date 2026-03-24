@@ -4,6 +4,29 @@
     return el ? el.value : '';
   }
 
+  function extractWeightFromNotes(notes) {
+    if (!notes) return '';
+    var match = String(notes).match(/Weight:\s*([0-9.]+)/i);
+    return match ? match[1] : '';
+  }
+
+  var selectedPaymentMethod = 'mtn_momo';
+  document.querySelectorAll('.payment-method-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.payment-method-btn').forEach(function(b) { b.classList.remove('active'); });
+      this.classList.add('active');
+      selectedPaymentMethod = this.getAttribute('data-method') || 'mtn_momo';
+    });
+  });
+
+  var closePanelBtn = document.getElementById('closePaymentPanelBtn');
+  if (closePanelBtn) {
+    closePanelBtn.addEventListener('click', function() {
+      var panel = document.getElementById('wastePaymentPanel');
+      if (panel) panel.style.display = 'none';
+    });
+  }
+
   var requestForm = document.getElementById('requestForm');
   if (requestForm) {
     requestForm.addEventListener('submit', function(e) {
@@ -74,7 +97,35 @@
     btn.addEventListener('click', function() {
       var requestId = this.getAttribute('data-id');
       var amount = parseFloat(this.getAttribute('data-amount'), 10) || 20000;
+      var notes = this.getAttribute('data-notes') || '';
       if (!requestId) return;
+      var panel = document.getElementById('wastePaymentPanel');
+      if (panel) panel.style.display = 'block';
+      var reqIdEl = document.getElementById('paymentRequestId');
+      var priceEl = document.getElementById('paymentPrice');
+      var totalEl = document.getElementById('paymentTotal');
+      var weightEl = document.getElementById('paymentWeightKg');
+      var phoneEl = document.getElementById('paymentPhone');
+      var emailEl = document.getElementById('paymentEmail');
+      if (reqIdEl) reqIdEl.value = requestId;
+      if (priceEl) priceEl.textContent = amount.toFixed(2);
+      if (totalEl) totalEl.textContent = amount.toFixed(2);
+      if (weightEl) weightEl.textContent = extractWeightFromNotes(notes) || '-';
+      if (phoneEl && !phoneEl.value) phoneEl.value = (document.getElementById('defaultCustomerPhone') || {}).value || '';
+      if (emailEl && !emailEl.value) emailEl.value = (document.getElementById('defaultCustomerEmail') || {}).value || '';
+      if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  var payNowBtn = document.getElementById('payNowBtn');
+  if (payNowBtn) {
+    payNowBtn.addEventListener('click', function() {
+      var requestId = document.getElementById('paymentRequestId') ? document.getElementById('paymentRequestId').value : '';
+      var amount = parseFloat((document.getElementById('paymentTotal') || {}).textContent || '0');
+      var phone = (document.getElementById('paymentPhone') || {}).value || '';
+      var email = (document.getElementById('paymentEmail') || {}).value || '';
+      if (!requestId) return alert('Select a request to pay for.');
+      if (!phone.trim()) return alert('Phone number is required.');
       var csrf = getCsrf();
       fetch('/payment/initialize', {
         method: 'POST',
@@ -84,7 +135,14 @@
           'Accept': 'application/json',
           'csrf-token': csrf
         },
-        body: JSON.stringify({ request_id: parseInt(requestId, 10), amount: amount, _csrf: csrf })
+        body: JSON.stringify({
+          request_id: parseInt(requestId, 10),
+          amount: amount,
+          phone: phone.trim(),
+          email: email.trim() || null,
+          payment_method: selectedPaymentMethod,
+          _csrf: csrf
+        })
       }).then(function(r) {
         return r.json().then(function(d) {
           if (!r.ok) throw new Error(d.message || 'Payment failed');
@@ -95,7 +153,7 @@
         else alert(d.message || 'Payment failed');
       }).catch(function(e) { alert(e.message || 'Payment failed'); });
     });
-  });
+  }
 
   document.querySelectorAll('.confirm-payment').forEach(function(btn) {
     btn.addEventListener('click', function() {

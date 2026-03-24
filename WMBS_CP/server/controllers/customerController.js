@@ -33,6 +33,7 @@ exports.dashboard = async (req, res) => {
 
     res.render('customer/dashboard', {
       title: 'Customer Dashboard',
+      user: req.user,
       requests,
       payments,
       notifications,

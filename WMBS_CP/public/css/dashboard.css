@@ -287,6 +287,33 @@
   box-shadow: 0 1px 4px rgba(0,0,0,0.4);
 }
 
+.payment-card {
+  max-width: 520px;
+  margin-top: 8px;
+  border: 1px solid var(--border);
+}
+
+.payment-row {
+  margin-bottom: 8px;
+}
+
+.payment-total {
+  font-size: 1.05rem;
+  margin: 10px 0;
+}
+
+.payment-methods {
+  display: flex;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.payment-method-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
 /* Pulsing marker helper */
 .truck-marker {
   position: relative;

@@ -111,7 +111,7 @@
                         <button type="button" class="btn btn-sm cancel-request" data-id="<%= r.id %>">Cancel</button>
                       <% } %>
                       <% if (r.status === 'in_progress' && Number(r.amount || 0) > 0) { %>
-                        <button type="button" class="btn btn-sm btn-primary pay-request" data-id="<%= r.id %>" data-amount="<%= r.amount %>">Pay with Mobile Money</button>
+                        <button type="button" class="btn btn-sm btn-primary pay-request" data-id="<%= r.id %>" data-amount="<%= r.amount %>" data-notes="<%= (r.notes || '').replace(/"/g, '&quot;') %>">Pay with Mobile Money</button>
                         <button type="button" class="btn btn-sm btn-secondary confirm-payment" data-id="<%= r.id %>">Confirm Payment</button>
                       <% } %>
                     </td>
@@ -133,6 +133,34 @@
                 <% }); } else { %><tr><td colspan="4">No payments</td></tr><% } %>
               </tbody>
             </table>
+          </div>
+        </section>
+
+        <section class="dashboard-section" id="wastePaymentPanel" style="display:none;">
+          <div class="card payment-card">
+            <h2>Waste Payment</h2>
+            <input type="hidden" id="defaultCustomerPhone" value="<%= user && user.phone ? user.phone : '' %>">
+            <input type="hidden" id="defaultCustomerEmail" value="<%= user && user.email ? user.email : '' %>">
+            <div class="payment-row"><strong>Customer:</strong> <span id="paymentCustomerName"><%= typeof user !== 'undefined' && user ? user.name : 'Customer' %></span></div>
+            <div class="payment-row"><strong>Waste Collected:</strong> <span id="paymentWeightKg">-</span> KG</div>
+            <div class="payment-row"><strong>Price:</strong> UGX <span id="paymentPrice">0.00</span></div>
+            <hr>
+            <div class="payment-total"><strong>Total Amount:</strong> UGX <span id="paymentTotal">0.00</span></div>
+            <hr>
+            <input type="hidden" id="paymentRequestId" value="">
+            <label>Phone Number:</label>
+            <input type="text" id="paymentPhone" class="form-control" placeholder="07XXXXXXXX" value="">
+            <label>Email (Optional):</label>
+            <input type="email" id="paymentEmail" class="form-control" placeholder="example@email.com" value="">
+            <hr>
+            <label>Choose Payment Method:</label>
+            <div class="payment-methods">
+              <button type="button" class="btn btn-secondary payment-method-btn active" data-method="mtn_momo">MTN MOMO</button>
+              <button type="button" class="btn btn-secondary payment-method-btn" data-method="airtel_money">AIRTEL MONEY</button>
+            </div>
+            <hr>
+            <button type="button" class="btn btn-primary" id="payNowBtn">PAY NOW</button>
+            <button type="button" class="btn btn-sm btn-secondary" id="closePaymentPanelBtn" style="margin-top:8px;">Close</button>
           </div>
         </section>
       </main>
