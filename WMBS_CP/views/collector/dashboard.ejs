@@ -87,7 +87,6 @@
                   <br><small>Payment: <%= j.paymentConfirmed ? 'Confirmed' : 'Pending' %></small>
                   <% if (j.latitude && j.longitude) { %>
                     <br><button type="button" class="btn btn-sm btn-secondary route-job-btn" data-id="<%= j.id %>" data-lat="<%= j.latitude %>" data-lng="<%= j.longitude %>">Follow route</button>
-                    <a class="btn btn-sm btn-primary" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=<%= j.latitude %>,<%= j.longitude %>&travelmode=driving">Open in Google Maps</a>
                   <% } else { %>
                     <br><small class="text-muted">No map coordinates for this request.</small>
                   <% } %>
@@ -125,7 +124,6 @@
                   <br><small>Status: Scheduled (not active yet)</small>
                   <% if (j.latitude && j.longitude) { %>
                     <br><button type="button" class="btn btn-sm btn-secondary route-job-btn" data-id="<%= j.id %>" data-lat="<%= j.latitude %>" data-lng="<%= j.longitude %>">Preview route</button>
-                    <a class="btn btn-sm btn-primary" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=<%= j.latitude %>,<%= j.longitude %>&travelmode=driving">Open in Google Maps</a>
                   <% } %>
                 </li>
               <% }); } else { %>
