@@ -77,12 +77,9 @@
               <option value="household">Household Waste</option>
               <option value="agricultural">Agricultural Waste</option>
             </select>
-            <label>Subscription</label>
-            <select name="subscription_type" class="form-control">
-              <option value="monthly">Monthly - 50000 UGX</option>
-              <option value="weekly">Weekly - 15000 UGX</option>
-              <option value="on_demand">On-demand - 20000 UGX</option>
-            </select>
+            <small class="text-muted" style="display:block; margin-top:8px;">
+              Bill is estimated after weighing: 0-50KG=5000, 51-100KG=10000, 101-150KG=15000, 151-200KG=20000, then +5000 for every extra 50KG bracket.
+            </small>
             <label>Scheduled date</label>
             <input type="date" name="scheduled_date" class="form-control">
             <button type="submit" class="btn btn-primary" style="margin-top:12px;">Submit request</button>

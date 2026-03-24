@@ -17,7 +17,6 @@
       var data = {
         address: addressVal,
         waste_category: form.waste_category.value,
-        subscription_type: form.subscription_type.value,
         scheduled_date: form.scheduled_date.value || null,
         scheduled_time_slot: form.scheduled_time_slot ? form.scheduled_time_slot.value : null,
         _csrf: getCsrf()

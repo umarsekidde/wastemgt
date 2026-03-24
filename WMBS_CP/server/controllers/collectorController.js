@@ -6,7 +6,11 @@ const fs = require('fs');
 
 const uploadDir = path.join(__dirname, '../../public/uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-const RATE_PER_KG = parseFloat(process.env.WASTE_RATE_PER_KG || '1000');
+
+function calculateEstimatedAmount(weightKg) {
+  if (!Number.isFinite(weightKg) || weightKg <= 0) return 0;
+  return Math.ceil(weightKg / 50) * 5000;
+}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
@@ -63,8 +67,7 @@ exports.dashboard = async (req, res) => {
       collector,
       assignedJobs: jobsWithBilling,
       completedToday,
-      totalEarnings,
-      ratePerKg: RATE_PER_KG
+      totalEarnings
     });
   } catch (err) {
     console.error(err);
@@ -127,8 +130,8 @@ exports.completeJob = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please enter a valid waste weight in KG.' });
     }
 
-    const computedAmount = Number((weight * RATE_PER_KG).toFixed(2));
-    const weightNote = `Weight: ${weight.toFixed(2)} KG @ UGX ${RATE_PER_KG.toFixed(2)}/KG => UGX ${computedAmount.toFixed(2)}`;
+    const computedAmount = calculateEstimatedAmount(weight);
+    const weightNote = `Weight: ${weight.toFixed(2)} KG | Estimated Bill: UGX ${computedAmount.toFixed(2)} (Bracket-based)`;
     const mergedNotes = wasteRequest.notes && String(wasteRequest.notes).trim()
       ? `${wasteRequest.notes}\n${weightNote}`
       : weightNote;

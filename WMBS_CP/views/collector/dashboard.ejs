@@ -83,7 +83,7 @@
                   <br><small>Address: <%= j.address %></small>
                   <br><small><%= j.scheduled_date || '-' %> <%= j.scheduled_time_slot || '' %></small>
                   <br><small>Category: <%= j.selectedCategory || '-' %></small>
-                  <br><small>Rate: UGX <%= Number(ratePerKg || 0).toFixed(2) %> / KG</small>
+                  <br><small>Pricing: 0-50KG=5000, 51-100KG=10000, 101-150KG=15000, 151-200KG=20000, then +5000 per 50KG</small>
                   <br><small>Payment: <%= j.paymentConfirmed ? 'Confirmed' : 'Pending' %></small>
                   <form class="proof-form" style="display:none; margin-top: 0.6rem;" enctype="multipart/form-data">
                     <label>Measured weight (KG)</label>

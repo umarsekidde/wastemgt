@@ -58,8 +58,8 @@ exports.requestPickup = async (req, res) => {
       if (wantsJson) return res.status(400).json({ success: false, message: 'Your account is not assigned to an area. Please contact support.' });
       return res.redirect('/customer');
     }
-    const plan = await db.SubscriptionPlan.findOne({ where: { type: req.body.subscription_type, is_active: true } });
-    const amount = plan ? plan.amount : (req.body.subscription_type === 'on_demand' ? 20000 : req.body.subscription_type === 'weekly' ? 15000 : 50000);
+    const defaultSubscription = 'on_demand';
+    const amount = 0;
     const scheduledDate = req.body.scheduled_date && String(req.body.scheduled_date).trim() ? req.body.scheduled_date : null;
     const scheduledTimeSlot = req.body.scheduled_time_slot && String(req.body.scheduled_time_slot).trim() ? req.body.scheduled_time_slot : null;
     const addressStr = req.body.address.trim();
@@ -73,7 +73,7 @@ exports.requestPickup = async (req, res) => {
       address: addressStr,
       latitude: latFromBody,
       longitude: lngFromBody,
-      subscription_type: req.body.subscription_type,
+      subscription_type: req.body.subscription_type || defaultSubscription,
       scheduled_date: scheduledDate,
       scheduled_time_slot: scheduledTimeSlot,
       notes: extraNotes ? `${categoryNote}\n${extraNotes}` : categoryNote,

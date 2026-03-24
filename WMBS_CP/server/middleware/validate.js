@@ -59,7 +59,7 @@ const schemas = {
     latitude: Joi.number().min(-90).max(90).allow(null),
     longitude: Joi.number().min(-180).max(180).allow(null),
     waste_category: Joi.string().valid('industrial', 'commercial', 'household', 'agricultural').required(),
-    subscription_type: Joi.string().valid('monthly', 'weekly', 'on_demand').required(),
+    subscription_type: Joi.string().valid('monthly', 'weekly', 'on_demand').optional(),
     scheduled_date: Joi.alternatives().try(Joi.date().iso(), Joi.string().allow('', null)).allow(null).optional(),
     scheduled_time_slot: Joi.string().allow('', null).optional(),
     notes: Joi.string().allow('', null).optional()
