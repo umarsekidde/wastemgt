@@ -1,6 +1,7 @@
 const db = require('../models');
 const { v4: uuidv4 } = require('uuid');
 const flutterwaveService = require('../services/flutterwaveService');
+const pesapalService = require('../services/pesapalService');
 const emailService = require('../services/emailService');
 
 function generateInvoiceNumber() {
@@ -24,8 +25,15 @@ async function notifyCollectorPaymentConfirmed(payment) {
 
 exports.initializePayment = async (req, res) => {
   try {
-    if (!flutterwaveService.isPaymentConfigured()) {
-      return res.status(503).json({ success: false, message: flutterwaveService.NOT_CONFIGURED_MESSAGE });
+    const provider = String(process.env.PAYMENT_PROVIDER || 'flutterwave').toLowerCase();
+    if (provider === 'pesapal') {
+      if (!pesapalService.isPesapalConfigured()) {
+        return res.status(503).json({ success: false, message: pesapalService.NOT_CONFIGURED_MESSAGE });
+      }
+    } else {
+      if (!flutterwaveService.isPaymentConfigured()) {
+        return res.status(503).json({ success: false, message: flutterwaveService.NOT_CONFIGURED_MESSAGE });
+      }
     }
 
     const { request_id, amount, phone, email, payment_method } = req.body;
@@ -41,13 +49,34 @@ exports.initializePayment = async (req, res) => {
 
     const existingPending = await db.Payment.findOne({ where: { request_id, user_id: req.user.id, status: 'pending' } });
     if (existingPending) {
-      const init = await flutterwaveService.initializePayment({
-        tx_ref: existingPending.flutterwave_tx_id || existingPending.id + '-' + Date.now(),
-        amount: amt,
-        customer: { email: customerEmail, name: req.user.name, phone: normalizedPhone },
-        meta: { request_id, user_id: req.user.id, payment_id: existingPending.id, payment_method: selectedMethod }
-      });
-      return res.json({ success: true, link: init.link, paymentId: existingPending.id });
+      if (provider === 'pesapal') {
+        const billing = {
+          email_address: customerEmail,
+          phone_number: normalizedPhone,
+          country_code: 'UG',
+          first_name: String(req.user.name || 'Customer').split(' ')[0] || 'Customer',
+          last_name: String(req.user.name || 'Customer').split(' ').slice(1).join(' ') || 'WMBS'
+        };
+        const submit = await pesapalService.submitOrderRequest({
+          merchantReference: existingPending.invoice_number || String(existingPending.id),
+          amount: amt,
+          currency: 'UGX',
+          description: `WMBS Waste Payment for Request #${request_id}`,
+          billingAddress: billing,
+          paymentMethod: selectedMethod
+        });
+        existingPending.metadata = { ...(existingPending.metadata || {}), provider: 'pesapal', orderTrackingId: submit.order_tracking_id, merchantReference: submit.merchant_reference };
+        await existingPending.save();
+        return res.json({ success: true, link: submit.redirect_url, paymentId: existingPending.id });
+      } else {
+        const init = await flutterwaveService.initializePayment({
+          tx_ref: existingPending.flutterwave_tx_id || existingPending.id + '-' + Date.now(),
+          amount: amt,
+          customer: { email: customerEmail, name: req.user.name, phone: normalizedPhone },
+          meta: { request_id, user_id: req.user.id, payment_id: existingPending.id, payment_method: selectedMethod }
+        });
+        return res.json({ success: true, link: init.link, paymentId: existingPending.id });
+      }
     }
 
     const invoiceNumber = generateInvoiceNumber();
@@ -60,20 +89,41 @@ exports.initializePayment = async (req, res) => {
       payment_method: selectedMethod
     });
 
-    const txRef = payment.id + '-' + uuidv4().slice(0, 8);
-    const init = await flutterwaveService.initializePayment({
-      tx_ref: txRef,
-      amount: amt,
-      customer: { email: customerEmail, name: req.user.name, phone: normalizedPhone },
-      meta: { request_id, user_id: req.user.id, payment_id: payment.id, payment_method: selectedMethod }
-    });
+    if (provider === 'pesapal') {
+      const billing = {
+        email_address: customerEmail,
+        phone_number: normalizedPhone,
+        country_code: 'UG',
+        first_name: String(req.user.name || 'Customer').split(' ')[0] || 'Customer',
+        last_name: String(req.user.name || 'Customer').split(' ').slice(1).join(' ') || 'WMBS'
+      };
+      const submit = await pesapalService.submitOrderRequest({
+        merchantReference: invoiceNumber,
+        amount: amt,
+        currency: 'UGX',
+        description: `WMBS Waste Payment for Request #${request_id}`,
+        billingAddress: billing,
+        paymentMethod: selectedMethod
+      });
+      payment.metadata = { ...(payment.metadata || {}), provider: 'pesapal', orderTrackingId: submit.order_tracking_id, merchantReference: submit.merchant_reference };
+      await payment.save();
+      return res.json({ success: true, link: submit.redirect_url, paymentId: payment.id });
+    } else {
+      const txRef = payment.id + '-' + uuidv4().slice(0, 8);
+      const init = await flutterwaveService.initializePayment({
+        tx_ref: txRef,
+        amount: amt,
+        customer: { email: customerEmail, name: req.user.name, phone: normalizedPhone },
+        meta: { request_id, user_id: req.user.id, payment_id: payment.id, payment_method: selectedMethod }
+      });
 
-    payment.flutterwave_tx_id = txRef;
-    await payment.save();
+      payment.flutterwave_tx_id = txRef;
+      await payment.save();
 
-    res.json({ success: true, link: init.link, paymentId: payment.id });
+      return res.json({ success: true, link: init.link, paymentId: payment.id });
+    }
   } catch (err) {
-    if (err.message !== flutterwaveService.NOT_CONFIGURED_MESSAGE) {
+    if (err.message !== flutterwaveService.NOT_CONFIGURED_MESSAGE && err.message !== pesapalService.NOT_CONFIGURED_MESSAGE) {
       console.error(err);
     }
     res.status(400).json({ success: false, message: err.message || 'Failed to initialize payment' });
@@ -102,6 +152,50 @@ exports.verifyPayment = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.redirect('/customer?payment=failed');
+  }
+};
+
+exports.pesapalCallback = async (req, res) => {
+  try {
+    const orderTrackingId = req.query.OrderTrackingId || req.query.orderTrackingId;
+    const merchantRef = req.query.OrderMerchantReference || req.query.orderMerchantReference;
+    if (!orderTrackingId) return res.redirect('/customer?payment=failed');
+
+    const status = await pesapalService.getTransactionStatus(orderTrackingId);
+    const localStatus = pesapalService.mapPesapalStatusToLocal(status?.payment_status_description || status?.payment_status);
+
+    const payment = await db.Payment.findOne({
+      where: { user_id: req.user.id, invoice_number: merchantRef || undefined },
+      order: [['created_at', 'DESC']]
+    });
+    const fallbackPayment = !payment
+      ? await db.Payment.findOne({
+          where: {
+            user_id: req.user.id,
+            metadata: db.sequelize.where(db.sequelize.json('metadata.orderTrackingId'), orderTrackingId)
+          },
+          order: [['created_at', 'DESC']]
+        })
+      : null;
+    const pay = payment || fallbackPayment;
+    if (!pay) return res.redirect('/customer?payment=failed');
+
+    if (localStatus === 'success') {
+      pay.status = 'success';
+      await pay.save();
+      await notifyCollectorPaymentConfirmed(pay);
+      await emailService.sendPaymentSuccess(req.user.email, pay.amount, pay.invoice_number).catch(() => {});
+      return res.redirect('/customer?payment=success');
+    }
+    if (localStatus === 'failed') {
+      pay.status = 'failed';
+      await pay.save();
+      return res.redirect('/customer?payment=failed');
+    }
+    return res.redirect('/customer?payment=pending');
+  } catch (err) {
+    console.error(err);
+    return res.redirect('/customer?payment=failed');
   }
 };
 

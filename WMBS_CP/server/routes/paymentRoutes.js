@@ -10,5 +10,6 @@ router.use(authenticate, requireCustomer);
 router.post('/initialize', validate(schemas.paymentInit), paymentController.initializePayment);
 router.post('/confirm', paymentController.confirmPayment);
 router.get('/verify', paymentController.verifyPayment);
+router.get('/pesapal/callback', paymentController.pesapalCallback);
 
 module.exports = router;
