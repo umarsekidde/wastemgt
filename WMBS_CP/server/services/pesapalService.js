@@ -85,6 +85,27 @@ async function getTransactionStatus(orderTrackingId) {
   return data;
 }
 
+async function registerIpnUrl(ipnListenerUrl) {
+  // This endpoint returns the `ipn_id` (notification_id) required by SubmitOrderRequest.
+  ensurePesapalConfigured();
+  const token = await requestToken();
+  const url = `${pesapalConfig.baseUrl}/pesapalv3/api/URLSetup/RegisterIPN`;
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({
+      url: ipnListenerUrl,
+      ipn_notification_type: 'GET'
+    })
+  });
+  const data = await resp.json().catch(() => ({}));
+  if (!resp.ok) {
+    throw new Error(data?.message || 'Pesapal IPN registration failed');
+  }
+  // Expected: { ipn_id: "...", url: "...", created_date: "...", ... }
+  return data;
+}
+
 function mapPesapalStatusToLocal(status) {
   const s = String(status || '').toUpperCase();
   if (s === 'COMPLETED') return 'success';
@@ -99,6 +120,7 @@ module.exports = {
   requestToken,
   submitOrderRequest,
   getTransactionStatus,
+  registerIpnUrl,
   mapPesapalStatusToLocal
 };
 

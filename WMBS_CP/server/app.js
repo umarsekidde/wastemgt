@@ -14,6 +14,7 @@ const collectorRoutes = require('./routes/collectorRoutes');
 const customerRoutes = require('./routes/customerRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const webhookRoutes = require('./routes/webhookRoutes');
+const pesapalService = require('./services/pesapalService');
 
 const app = express();
 
@@ -83,6 +84,24 @@ app.get('/api/seed', (req, res) => {
       console.error('Seed failed:', err);
       res.status(500).json({ error: 'Seed failed', message: err.message });
     });
+});
+
+// One-time Pesapal IPN registration helper.
+// Usage: /api/pesapal/register-ipn?secret=YOUR_SEED_SECRET
+// Returns: { ok: true, ipn_id: "..." } -> set this as PESAPAL_IPN_ID in Render.
+app.get('/api/pesapal/register-ipn', async (req, res) => {
+  try {
+    const secret = process.env.SEED_SECRET;
+    if (!secret || req.query.secret !== secret) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+    const ipnUrl = `${req.protocol}://${req.get('host')}/webhooks/pesapal`;
+    const result = await pesapalService.registerIpnUrl(ipnUrl);
+    return res.json({ ok: true, ipn_id: result.ipn_id, url: result.url || ipnUrl, full: result });
+  } catch (err) {
+    console.error('Pesapal IPN registration failed:', err);
+    return res.status(500).json({ ok: false, message: err.message });
+  }
 });
 
 app.get('/', (req, res) => {
