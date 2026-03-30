@@ -10,6 +10,9 @@ module.exports = {
   ipnId: process.env.PESAPAL_IPN_ID || null,
   callbackUrl: process.env.PESAPAL_CALLBACK_URL,
   cancellationUrl: process.env.PESAPAL_CANCELLATION_URL || process.env.APP_URL || '',
-  baseUrl: isLive ? 'https://pay.pesapal.com' : 'https://cybqa.pesapal.com'
+  // Pesapal uses different path prefixes for sandbox vs live
+  // Sandbox: https://cybqa.pesapal.com/pesapalv3/api/...
+  // Live:    https://pay.pesapal.com/v3/api/...
+  apiBaseUrl: isLive ? 'https://pay.pesapal.com/v3/api' : 'https://cybqa.pesapal.com/pesapalv3/api'
 };
 

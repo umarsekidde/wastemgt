@@ -16,7 +16,7 @@ function ensurePesapalConfigured({ requireIpnId = false } = {}) {
 
 async function requestToken() {
   ensurePesapalConfigured();
-  const url = `${pesapalConfig.baseUrl}/pesapalv3/api/Auth/RequestToken`;
+  const url = `${pesapalConfig.apiBaseUrl}/Auth/RequestToken`;
   const resp = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -35,7 +35,7 @@ async function requestToken() {
 async function submitOrderRequest({ merchantReference, amount, currency, description, billingAddress, callbackUrl, cancellationUrl, paymentMethod }) {
   ensurePesapalConfigured({ requireIpnId: true });
   const token = await requestToken();
-  const url = `${pesapalConfig.baseUrl}/pesapalv3/api/Transactions/SubmitOrderRequest`;
+  const url = `${pesapalConfig.apiBaseUrl}/Transactions/SubmitOrderRequest`;
 
   const safeDesc = String(description || 'WMBS Waste Payment').slice(0, 100);
   const id = String(merchantReference || crypto.randomUUID()).slice(0, 50);
@@ -70,7 +70,7 @@ async function submitOrderRequest({ merchantReference, amount, currency, descrip
 async function getTransactionStatus(orderTrackingId) {
   ensurePesapalConfigured();
   const token = await requestToken();
-  const url = `${pesapalConfig.baseUrl}/pesapalv3/api/Transactions/GetTransactionStatus?orderTrackingId=${encodeURIComponent(orderTrackingId)}`;
+  const url = `${pesapalConfig.apiBaseUrl}/Transactions/GetTransactionStatus?orderTrackingId=${encodeURIComponent(orderTrackingId)}`;
   const resp = await fetch(url, {
     method: 'GET',
     headers: { Accept: 'application/json', Authorization: `Bearer ${token}` }
@@ -87,7 +87,7 @@ async function registerIpnUrl(ipnListenerUrl) {
   // IPN ID is not required yet; we are registering it.
   ensurePesapalConfigured({ requireIpnId: false });
   const token = await requestToken();
-  const url = `${pesapalConfig.baseUrl}/pesapalv3/api/URLSetup/RegisterIPN`;
+  const url = `${pesapalConfig.apiBaseUrl}/URLSetup/RegisterIPN`;
   const resp = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${token}` },
