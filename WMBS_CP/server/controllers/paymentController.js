@@ -23,6 +23,28 @@ async function notifyCollectorPaymentConfirmed(payment) {
   }).catch(() => {});
 }
 
+async function notifyAdminPaymentConfirmed(payment) {
+  if (!payment || !payment.request_id) return;
+  const wasteRequest = await db.WasteRequest.findByPk(payment.request_id, { attributes: ['id', 'division_id'] });
+  if (!wasteRequest?.division_id) return;
+  const company = await db.Company.findOne({ where: { division_id: wasteRequest.division_id, is_active: true }, attributes: ['admin_id'] });
+  if (!company?.admin_id) return;
+  await db.Notification.create({
+    user_id: company.admin_id,
+    title: 'Payment received',
+    message: `Payment for request #${wasteRequest.id} has been confirmed.`,
+    type: 'payment',
+    link: '/admin/revenue'
+  }).catch(() => {});
+}
+
+async function notifyAdminAndCollector(payment) {
+  await Promise.all([
+    notifyCollectorPaymentConfirmed(payment),
+    notifyAdminPaymentConfirmed(payment)
+  ]);
+}
+
 exports.initializePayment = async (req, res) => {
   try {
     const provider = String(process.env.PAYMENT_PROVIDER || 'flutterwave').toLowerCase();
@@ -142,7 +164,7 @@ exports.verifyPayment = async (req, res) => {
     if (data.status === 'successful') {
       payment.status = 'success';
       await payment.save();
-      await notifyCollectorPaymentConfirmed(payment);
+      await notifyAdminAndCollector(payment);
       await emailService.sendPaymentSuccess(req.user.email, payment.amount, payment.invoice_number).catch(() => {});
     } else {
       payment.status = 'failed';
@@ -183,7 +205,7 @@ exports.pesapalCallback = async (req, res) => {
     if (localStatus === 'success') {
       pay.status = 'success';
       await pay.save();
-      await notifyCollectorPaymentConfirmed(pay);
+      await notifyAdminAndCollector(pay);
       await emailService.sendPaymentSuccess(req.user.email, pay.amount, pay.invoice_number).catch(() => {});
       return res.redirect('/customer?payment=success');
     }
@@ -213,7 +235,7 @@ exports.confirmPayment = async (req, res) => {
     if (payment.status !== 'success') {
       return res.status(400).json({ success: false, message: 'Payment is not yet confirmed. Please complete Mobile Money prompt first.' });
     }
-    await notifyCollectorPaymentConfirmed(payment);
+    await notifyAdminAndCollector(payment);
     return res.json({ success: true, message: 'Payment confirmed successfully.' });
   } catch (err) {
     return res.status(400).json({ success: false, message: err.message || 'Unable to confirm payment' });

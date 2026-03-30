@@ -3,6 +3,21 @@ const flutterwaveService = require('../services/flutterwaveService');
 const pesapalService = require('../services/pesapalService');
 const emailService = require('../services/emailService');
 
+async function notifyAdminPaymentConfirmed(payment) {
+  if (!payment || !payment.request_id) return;
+  const wasteRequest = await db.WasteRequest.findByPk(payment.request_id, { attributes: ['id', 'division_id'] });
+  if (!wasteRequest?.division_id) return;
+  const company = await db.Company.findOne({ where: { division_id: wasteRequest.division_id, is_active: true }, attributes: ['admin_id'] });
+  if (!company?.admin_id) return;
+  await db.Notification.create({
+    user_id: company.admin_id,
+    title: 'Payment received',
+    message: `Payment for request #${wasteRequest.id} has been confirmed.`,
+    type: 'payment',
+    link: '/admin/revenue'
+  }).catch(() => {});
+}
+
 exports.flutterwaveWebhook = async (req, res) => {
   const signature = req.headers['verif-hash'] || req.headers['x-verif-hash'];
   if (signature && !flutterwaveService.verifyWebhookSignature(signature)) {
@@ -37,6 +52,7 @@ exports.flutterwaveWebhook = async (req, res) => {
         }
         const user = await db.User.findByPk(payment.user_id);
         if (user) await emailService.sendPaymentSuccess(user.email, payment.amount, payment.invoice_number).catch(() => {});
+        await notifyAdminPaymentConfirmed(payment);
       }
     } catch (err) {
       console.error('Webhook process error:', err);
@@ -92,6 +108,7 @@ exports.pesapalIpn = async (req, res) => {
       }
       const user = await db.User.findByPk(payment.user_id);
       if (user) await emailService.sendPaymentSuccess(user.email, payment.amount, payment.invoice_number).catch(() => {});
+      await notifyAdminPaymentConfirmed(payment);
     }
 
     if (localStatus === 'failed') {

@@ -26,7 +26,14 @@ exports.postLogin = async (req, res) => {
       return res.render('auth/login', { title: 'Login', error: 'Invalid email or password', csrfToken: res.locals.csrfToken, query: req.query });
     }
     const token = generateToken(user.id, user.role);
-    const cookieOpts = { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000, sameSite: 'strict' };
+    // Use SameSite=Lax so auth cookie is sent on top-level redirects
+    // (required for payment providers redirecting back to our callback URL).
+    const cookieOpts = {
+      httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: 'lax',
+      secure: req.secure || (req.headers['x-forwarded-proto'] === 'https')
+    };
     res.cookie('wmbs_token_' + user.role, token, cookieOpts);
     res.cookie('token', token, cookieOpts);
     db.AuditLog.create({ action: 'LOGIN', performed_by: user.id, ip_address: req.ip }).catch((e) => console.error('AuditLog create failed:', e.message));
