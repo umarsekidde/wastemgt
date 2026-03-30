@@ -2,19 +2,16 @@ const crypto = require('crypto');
 const pesapalConfig = require('../config/pesapal');
 
 const NOT_CONFIGURED_MESSAGE =
-  'Pesapal payments are not configured. Set PESAPAL_CONSUMER_KEY, PESAPAL_CONSUMER_SECRET, PESAPAL_CALLBACK_URL and PESAPAL_IPN_ID in .env.';
+  'Pesapal payments are not configured. Set PESAPAL_CONSUMER_KEY, PESAPAL_CONSUMER_SECRET, PESAPAL_CALLBACK_URL in .env. (PESAPAL_IPN_ID is required for submitting orders).';
 
 function isPesapalConfigured() {
-  return !!(
-    pesapalConfig.consumerKey &&
-    pesapalConfig.consumerSecret &&
-    pesapalConfig.callbackUrl &&
-    pesapalConfig.ipnId
-  );
+  return !!(pesapalConfig.consumerKey && pesapalConfig.consumerSecret && pesapalConfig.callbackUrl);
 }
 
-function ensurePesapalConfigured() {
-  if (!isPesapalConfigured()) throw new Error(NOT_CONFIGURED_MESSAGE);
+function ensurePesapalConfigured({ requireIpnId = false } = {}) {
+  const baseOk = isPesapalConfigured();
+  const ipnOk = !requireIpnId || !!pesapalConfig.ipnId;
+  if (!baseOk || !ipnOk) throw new Error(NOT_CONFIGURED_MESSAGE);
 }
 
 async function requestToken() {
@@ -36,7 +33,7 @@ async function requestToken() {
 }
 
 async function submitOrderRequest({ merchantReference, amount, currency, description, billingAddress, callbackUrl, cancellationUrl, paymentMethod }) {
-  ensurePesapalConfigured();
+  ensurePesapalConfigured({ requireIpnId: true });
   const token = await requestToken();
   const url = `${pesapalConfig.baseUrl}/pesapalv3/api/Transactions/SubmitOrderRequest`;
 
@@ -87,7 +84,8 @@ async function getTransactionStatus(orderTrackingId) {
 
 async function registerIpnUrl(ipnListenerUrl) {
   // This endpoint returns the `ipn_id` (notification_id) required by SubmitOrderRequest.
-  ensurePesapalConfigured();
+  // IPN ID is not required yet; we are registering it.
+  ensurePesapalConfigured({ requireIpnId: false });
   const token = await requestToken();
   const url = `${pesapalConfig.baseUrl}/pesapalv3/api/URLSetup/RegisterIPN`;
   const resp = await fetch(url, {
