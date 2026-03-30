@@ -9,7 +9,14 @@ if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 function calculateEstimatedAmount(weightKg) {
   if (!Number.isFinite(weightKg) || weightKg <= 0) return 0;
-  return Math.ceil(weightKg / 50) * 5000;
+  // Pricing brackets:
+  // 0-50kg   => 500
+  // 51-100kg => 600
+  // 101-150kg => 700
+  // then +100 for every additional +50kg bracket
+  // bracketIndex = ceil(weight/50) (1 for 0-50), amount = 500 + (bracketIndex-1)*100
+  var bracketIndex = Math.ceil(weightKg / 50);
+  return 500 + (bracketIndex - 1) * 100;
 }
 
 function isFutureScheduledDate(scheduledDate) {

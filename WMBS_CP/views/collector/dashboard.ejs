@@ -83,7 +83,7 @@
                   <br><small>Address: <%= j.address %></small>
                   <br><small><%= j.scheduled_date || '-' %> <%= j.scheduled_time_slot || '' %></small>
                   <br><small>Category: <%= j.selectedCategory || '-' %></small>
-                  <br><small>Pricing: 0-50KG=5000, 51-100KG=10000, 101-150KG=15000, 151-200KG=20000, then +5000 per 50KG</small>
+                  <br><small>Pricing: 0-50KG=500, 51-100KG=600, 101-150KG=700, then +100 for every extra 50KG bracket</small>
                   <br><small>Payment: <%= j.paymentConfirmed ? 'Confirmed' : 'Pending' %></small>
                   <% if (j.latitude && j.longitude) { %>
                     <br><button type="button" class="btn btn-sm btn-secondary route-job-btn" data-id="<%= j.id %>" data-lat="<%= j.latitude %>" data-lng="<%= j.longitude %>">Follow route</button>
