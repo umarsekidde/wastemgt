@@ -158,14 +158,17 @@ exports.verifyPayment = async (req, res) => {
     if (!transaction_id) return res.status(400).json({ success: false, message: 'transaction_id required' });
     const data = await flutterwaveService.verifyTransaction(transaction_id);
     const payment = await db.Payment.findOne({
-      where: { flutterwave_tx_id: data.tx_ref, user_id: req.user.id }
+      where: { flutterwave_tx_id: data.tx_ref }
     });
     if (!payment) return res.status(404).json({ success: false, message: 'Payment not found' });
     if (data.status === 'successful') {
       payment.status = 'success';
       await payment.save();
       await notifyAdminAndCollector(payment);
-      await emailService.sendPaymentSuccess(req.user.email, payment.amount, payment.invoice_number).catch(() => {});
+      const paymentUser = await db.User.findByPk(payment.user_id, { attributes: ['email'] });
+      if (paymentUser?.email) {
+        await emailService.sendPaymentSuccess(paymentUser.email, payment.amount, payment.invoice_number).catch(() => {});
+      }
     } else {
       payment.status = 'failed';
       await payment.save();
@@ -186,14 +189,15 @@ exports.pesapalCallback = async (req, res) => {
     const status = await pesapalService.getTransactionStatus(orderTrackingId);
     const localStatus = pesapalService.mapPesapalStatusToLocal(status?.payment_status_description || status?.payment_status);
 
-    const payment = await db.Payment.findOne({
-      where: { user_id: req.user.id, invoice_number: merchantRef || undefined },
-      order: [['created_at', 'DESC']]
-    });
+    const payment = merchantRef
+      ? await db.Payment.findOne({
+          where: { invoice_number: merchantRef },
+          order: [['created_at', 'DESC']]
+        })
+      : null;
     const fallbackPayment = !payment
       ? await db.Payment.findOne({
           where: {
-            user_id: req.user.id,
             metadata: db.sequelize.where(db.sequelize.json('metadata.orderTrackingId'), orderTrackingId)
           },
           order: [['created_at', 'DESC']]
@@ -206,7 +210,10 @@ exports.pesapalCallback = async (req, res) => {
       pay.status = 'success';
       await pay.save();
       await notifyAdminAndCollector(pay);
-      await emailService.sendPaymentSuccess(req.user.email, pay.amount, pay.invoice_number).catch(() => {});
+      const paymentUser = await db.User.findByPk(pay.user_id, { attributes: ['email'] });
+      if (paymentUser?.email) {
+        await emailService.sendPaymentSuccess(paymentUser.email, pay.amount, pay.invoice_number).catch(() => {});
+      }
       return res.redirect('/customer?payment=success');
     }
     if (localStatus === 'failed') {
