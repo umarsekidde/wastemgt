@@ -240,7 +240,13 @@ exports.confirmCompletion = async (req, res) => {
     if (!paid) return res.status(400).json({ success: false, message: 'Payment not yet confirmed by customer.' });
 
     const proofUrl = req.file ? `/uploads/${req.file.filename}` : wasteRequest.proof_image_url;
-    await wasteRequest.update({ status: 'completed', completed_at: new Date(), proof_image_url: proofUrl });
+    await wasteRequest.update({
+      status: 'completed',
+      completed_at: new Date(),
+      proof_image_url: proofUrl,
+      latitude: null,
+      longitude: null
+    });
     await db.Notification.create({
       user_id: wasteRequest.customer_id,
       title: 'Collection completed',

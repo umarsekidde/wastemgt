@@ -85,30 +85,29 @@ function initAdminMap(containerId, lastUpdateEl) {
         });
       }
 
-      if (data.pickups && data.pickups.length) {
-        var currentPickupKeys = {};
-        data.pickups.forEach(function(p) {
-          var lat = parseFloat(p.lat), lng = parseFloat(p.lng);
-          if (isNaN(lat) || isNaN(lng)) return;
-          var pos = [lat, lng];
-          var key = 'pickup-' + p.id;
-          currentPickupKeys[key] = true;
-          if (pickupMarkers[key]) {
-            pickupMarkers[key].setLatLng(pos);
-          } else {
-            var m = L.marker(pos, { icon: customerIcon }).addTo(map);
-            var tip = (p.customerName || 'Customer') + ' – ' + (p.address || '').substring(0, 50) + (p.address && p.address.length > 50 ? '…' : '') + ' [' + (p.status || '') + ']';
-            m.bindTooltip(tip, { permanent: false });
-            pickupMarkers[key] = m;
-          }
-        });
-        Object.keys(pickupMarkers).forEach(function(k) {
-          if (!currentPickupKeys[k]) {
-            map.removeLayer(pickupMarkers[k]);
-            delete pickupMarkers[k];
-          }
-        });
-      }
+      var currentPickupKeys = {};
+      var pickups = Array.isArray(data.pickups) ? data.pickups : [];
+      pickups.forEach(function(p) {
+        var lat = parseFloat(p.lat), lng = parseFloat(p.lng);
+        if (isNaN(lat) || isNaN(lng)) return;
+        var pos = [lat, lng];
+        var key = 'pickup-' + p.id;
+        currentPickupKeys[key] = true;
+        if (pickupMarkers[key]) {
+          pickupMarkers[key].setLatLng(pos);
+        } else {
+          var m = L.marker(pos, { icon: customerIcon }).addTo(map);
+          var tip = (p.customerName || 'Customer') + ' – ' + (p.address || '').substring(0, 50) + (p.address && p.address.length > 50 ? '…' : '') + ' [' + (p.status || '') + ']';
+          m.bindTooltip(tip, { permanent: false });
+          pickupMarkers[key] = m;
+        }
+      });
+      Object.keys(pickupMarkers).forEach(function(k) {
+        if (!currentPickupKeys[k]) {
+          map.removeLayer(pickupMarkers[k]);
+          delete pickupMarkers[k];
+        }
+      });
 
       if (lastUpdateEl) lastUpdateEl.textContent = 'Last updated: ' + new Date().toLocaleTimeString();
     }).catch(function() {}).finally(function() { isFetching = false; });
