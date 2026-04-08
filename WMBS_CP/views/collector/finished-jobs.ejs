@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - WMBS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body class="collector-dashboard">
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <img src="/images/logo.png" alt="WMBS logo" class="header-logo">
+          <span>Waste Management &amp; Billing System</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/collector"><span class="sidebar-icon">🚛</span><span>Jobs</span></a>
+        <a href="/collector/finished"><span class="sidebar-icon">✅</span><span>Finished Jobs</span></a>
+        <a href="/auth/logout"><span class="sidebar-icon">⏏</span><span>Logout</span></a>
+      </nav>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="sidebarToggle" class="icon-button" type="button">☰</button>
+          <div>
+            <div class="topbar-title">Collector Portal</div>
+            <div class="text-muted">Completed jobs history</div>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button id="darkToggle" class="icon-button" type="button">🌙</button>
+        </div>
+      </header>
+
+      <main class="dashboard-main">
+        <h1>Finished Jobs</h1>
+        <section class="dashboard-section">
+          <div class="card">
+            <h2>Completed collections</h2>
+            <p class="text-muted">All jobs you have completed appear here.</p>
+            <ul class="job-list" style="margin-top: 0.75rem;">
+              <% if (completedJobs && completedJobs.length) { completedJobs.forEach(function(j) { %>
+                <li class="job-item">
+                  <strong>Order #<%= j.id %> - <%= j.User ? j.User.name : '-' %></strong>
+                  <% if (j.User && j.User.phone) { %>
+                    <br><small>Phone: <a href="tel:<%= j.User.phone %>"><%= j.User.phone %></a></small>
+                  <% } %>
+                  <br><small>Address: <%= j.address %></small>
+                  <br><small>Completed at: <%= j.completed_at ? new Date(j.completed_at).toLocaleString() : '-' %></small>
+                  <br><small>Measured weight: <%= j.measuredWeightKg || '-' %> KG</small>
+                  <br><small>Amount: UGX <%= j.amount || 0 %></small>
+                  <br><small>Payment: <%= j.paymentConfirmed ? 'Confirmed' : 'Pending/Unknown' %></small>
+                  <% if (j.proof_image_url) { %>
+                    <br><a href="<%= j.proof_image_url %>" target="_blank" rel="noopener noreferrer">View proof image</a>
+                  <% } %>
+                </li>
+              <% }); } else { %>
+                <li>No finished jobs yet.</li>
+              <% } %>
+            </ul>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/dashboard-ui.js"></script>
+</body>
+</html>

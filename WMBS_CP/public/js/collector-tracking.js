@@ -221,7 +221,7 @@
       var fd = new FormData(form);
       fd.append('_csrf', document.getElementById('csrfToken').value);
       fetch('/collector/api/confirm-complete/' + id, { method: 'POST', credentials: 'include', body: fd }).then(function(r) { return r.json(); }).then(function(d) {
-        if (d.success) location.reload();
+        if (d.success) window.location.href = '/collector/finished';
         else alert(d.message || 'Failed');
       }).catch(function() { alert('Failed'); });
     });

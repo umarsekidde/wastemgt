@@ -97,6 +97,51 @@ exports.dashboard = async (req, res) => {
   }
 };
 
+exports.finishedJobs = async (req, res) => {
+  try {
+    const collector = await db.Collector.findOne({
+      where: { user_id: req.user.id },
+      include: [{ model: db.Company, as: 'Company', include: [{ model: db.Division, as: 'Division' }] }]
+    });
+    if (!collector) return res.status(403).render('errors/403', { title: 'Collector profile not found' });
+
+    const completedJobs = await db.WasteRequest.findAll({
+      where: { assigned_collector_id: collector.id, status: 'completed' },
+      include: [{ model: db.User, as: 'User', attributes: ['name', 'phone', 'address'] }],
+      order: [['completed_at', 'DESC'], ['updated_at', 'DESC']]
+    });
+
+    const jobIds = completedJobs.map((j) => j.id);
+    const successPayments = jobIds.length
+      ? await db.Payment.findAll({
+          where: { request_id: { [Op.in]: jobIds }, status: 'success' },
+          attributes: ['request_id'],
+          order: [['created_at', 'DESC']]
+        })
+      : [];
+    const paidMap = successPayments.reduce((acc, p) => { acc[p.request_id] = true; return acc; }, {});
+
+    const jobsWithBilling = completedJobs.map((j) => {
+      const notesText = j.notes || '';
+      const weightMatch = String(notesText).match(/Weight:\s*([0-9.]+)\s*KG/i);
+      return {
+        ...j.toJSON(),
+        paymentConfirmed: !!paidMap[j.id],
+        measuredWeightKg: weightMatch ? weightMatch[1] : null
+      };
+    });
+
+    res.render('collector/finished-jobs', {
+      title: 'Finished Jobs',
+      collector,
+      completedJobs: jobsWithBilling
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).render('errors/500', { title: 'Error' });
+  }
+};
+
 exports.updateLocation = async (req, res) => {
   try {
     const collector = await db.Collector.findOne({ where: { user_id: req.user.id } });
