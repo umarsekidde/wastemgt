@@ -210,6 +210,10 @@
 
   document.querySelectorAll('.confirm-complete-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
+      if (this.disabled) {
+        alert('Finish is not active yet. Save weight first and ensure customer payment is confirmed.');
+        return;
+      }
       if (this.getAttribute('data-paid') !== '1') {
         alert('Customer payment is not confirmed yet.');
         return;

@@ -97,9 +97,24 @@
                     <label>Proof image (optional)</label>
                     <input type="file" name="proof_image" accept="image/*">
                     <button type="submit" class="btn btn-sm btn-primary record-weight-btn" style="margin-top:0.5rem;">Save weight & update bill</button>
-                    <button type="button" class="btn btn-sm btn-success confirm-complete-btn" data-paid="<%= j.paymentConfirmed ? '1' : '0' %>" style="margin-top:0.5rem;">
-                      Complete (Payment Confirmed)
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-success confirm-complete-btn"
+                      data-paid="<%= j.paymentConfirmed ? '1' : '0' %>"
+                      data-status="<%= j.status %>"
+                      <%= (j.status === 'in_progress' && j.paymentConfirmed) ? '' : 'disabled' %>
+                      style="margin-top:0.5rem;">
+                      Finish
                     </button>
+                    <small class="text-muted" style="display:block; margin-top:0.25rem;">
+                      <% if (j.status !== 'in_progress') { %>
+                        Finish becomes active after saving weight.
+                      <% } else if (!j.paymentConfirmed) { %>
+                        Finish becomes active after customer payment is confirmed.
+                      <% } else { %>
+                        Ready to finish this request.
+                      <% } %>
+                    </small>
                   </form>
                 </li>
               <% }); } else { %>
