@@ -58,16 +58,22 @@ exports.initializePayment = async (req, res) => {
       }
     }
 
-    const { request_id, amount, phone, email, payment_method } = req.body;
+    const { request_id, phone, email, payment_method } = req.body;
     const wasteRequest = await db.WasteRequest.findOne({ where: { id: request_id, customer_id: req.user.id } });
     if (!wasteRequest) return res.status(404).json({ success: false, message: 'Request not found' });
+    const requestAmount = parseFloat(wasteRequest.amount) || 0;
+    if (requestAmount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Payment is not available yet. Your waste must be weighed first.'
+      });
+    }
     const normalizedPhone = String(phone || req.user.phone || '').trim();
     if (!normalizedPhone) return res.status(400).json({ success: false, message: 'Phone number is required for Mobile Money.' });
     const customerEmail = String(email || req.user.email || '').trim();
     const selectedMethod = payment_method === 'airtel_money' ? 'airtel_money' : 'mtn_momo';
 
-    const amt = parseFloat(amount) || parseFloat(wasteRequest.amount) || 0;
-    if (amt <= 0) return res.status(400).json({ success: false, message: 'Invalid amount' });
+    const amt = requestAmount;
 
     const existingPending = await db.Payment.findOne({ where: { request_id, user_id: req.user.id, status: 'pending' } });
     if (existingPending) {

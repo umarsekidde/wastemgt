@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const collectorController = require('../controllers/collectorController');
+const notificationController = require('../controllers/notificationController');
 const { authenticate } = require('../middleware/auth');
 const { requireCollector } = require('../middleware/roleCheck');
 const { validate, schemas } = require('../middleware/validate');
@@ -16,5 +17,6 @@ router.post('/api/complete-job/:id', collectorController.uploadProof, collectorC
 router.post('/api/confirm-complete/:id', collectorController.uploadProof, collectorController.confirmCompletion);
 router.post('/api/emergency', collectorController.reportEmergency);
 router.get('/api/location-history', collectorController.getMyLocationHistory);
+router.get('/api/notifications/latest', notificationController.latestForCurrentUser);
 
 module.exports = router;

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const customerController = require('../controllers/customerController');
+const notificationController = require('../controllers/notificationController');
 const { authenticate } = require('../middleware/auth');
 const { requireCustomer } = require('../middleware/roleCheck');
 const { validate, schemas } = require('../middleware/validate');
@@ -14,6 +15,7 @@ router.put('/requests/:id', customerController.modifyRequest);
 router.get('/complaints', customerController.complaints);
 router.post('/complaints', validate(schemas.complaint), customerController.createComplaint);
 router.get('/notifications', customerController.notifications);
+router.get('/api/notifications/latest', notificationController.latestForCurrentUser);
 router.get('/payment-history', customerController.paymentHistory);
 router.get('/invoice/:id/download', customerController.downloadInvoice);
 

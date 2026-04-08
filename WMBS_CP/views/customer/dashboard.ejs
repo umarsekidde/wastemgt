@@ -120,6 +120,8 @@
                       <% } %>
                       <% if (['assigned', 'in_progress'].includes(r.status) && Number(r.amount || 0) > 0) { %>
                         <button type="button" class="btn btn-sm btn-primary pay-request" data-id="<%= r.id %>" data-amount="<%= r.amount %>" data-notes="<%= (r.notes || '').replace(/"/g, '&quot;') %>">Pay with Mobile Money</button>
+                      <% } else if (['assigned', 'in_progress'].includes(r.status) && Number(r.amount || 0) <= 0) { %>
+                        <button type="button" class="btn btn-sm btn-secondary" disabled>Awaiting weight update</button>
                       <% } %>
                       <% if (paymentStatusByRequest && ['pending', 'success'].includes(paymentStatusByRequest[r.id])) { %>
                         <button type="button" class="btn btn-sm btn-secondary confirm-payment" data-id="<%= r.id %>">Confirm Payment</button>
@@ -182,5 +184,14 @@
   <script src="/js/dashboard-ui.js"></script>
   <script src="/js/pickup-map.js"></script>
   <script src="/js/payments.js"></script>
+  <script>
+    window.browserNotifyConfig = {
+      endpoint: '/customer/api/notifications/latest',
+      storageKey: 'wmbs_notify_customer_last_id',
+      pollMs: 15000,
+      appTitle: 'WMBS Customer'
+    };
+  </script>
+  <script src="/js/browser-notifications.js"></script>
 </body>
 </html>

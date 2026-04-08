@@ -117,6 +117,15 @@
   <script src="/js/maps.js"></script>
   <script src="/js/dashboard-ui.js"></script>
   <script>
+    window.browserNotifyConfig = {
+      endpoint: '/admin/api/notifications/latest',
+      storageKey: 'wmbs_notify_admin_last_id',
+      pollMs: 15000,
+      appTitle: 'WMBS Admin'
+    };
+  </script>
+  <script src="/js/browser-notifications.js"></script>
+  <script>
     (function() {
       var revenueData = <%- JSON.stringify(monthlyRevenue || {}) %>;
       var labels = Object.keys(revenueData).sort();
