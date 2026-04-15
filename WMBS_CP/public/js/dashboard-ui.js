@@ -80,6 +80,9 @@ window.wmbsNotify = function (payload) {
   var autoCloseMs = isRich ? Number(payload.autoCloseMs || 0) : 3000;
   var toast = document.createElement('div');
   toast.className = 'wmbs-toast';
+  if (isRich && payload.position === 'top') {
+    toast.classList.add('wmbs-toast-top');
+  }
   if (!isRich) {
     toast.textContent = payload || 'Action completed';
   } else {

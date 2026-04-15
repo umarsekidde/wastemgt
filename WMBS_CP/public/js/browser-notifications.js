@@ -4,6 +4,7 @@
   var storageKey = cfg.storageKey || 'wmbs_notify_last_id';
   var pollMs = Number(cfg.pollMs || 15000);
   var appTitle = cfg.appTitle || 'WMBS';
+  var inAppPosition = cfg.inAppPosition || 'bottom';
 
   if (!endpoint || typeof fetch !== 'function' || typeof window === 'undefined') return;
 
@@ -43,7 +44,8 @@
       title: item.title || appTitle,
       message: item.message || 'You have a new notification.',
       createdAt: item.created_at,
-      link: item.link || ''
+      link: item.link || '',
+      position: inAppPosition
     });
   }
 

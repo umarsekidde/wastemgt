@@ -290,6 +290,11 @@ tr:last-child td {
   z-index: 9999;
 }
 
+.wmbs-toast-top {
+  top: 20px;
+  bottom: auto;
+}
+
 .wmbs-toast.show {
   opacity: 1;
   transform: translateY(0);
