@@ -2,34 +2,39 @@ const db = require('../models');
 const { Op } = require('sequelize');
 const { geocodeAddress } = require('../utils/geocode');
 
+async function getRequestsWithPaymentStatus(userId, limit) {
+  const requests = await db.WasteRequest.findAll({
+    where: { customer_id: userId },
+    include: [{ model: db.Collector, as: 'Collector', include: [{ model: db.User, as: 'User', attributes: ['name', 'phone'] }] }],
+    order: [['scheduled_date', 'DESC'], ['created_at', 'DESC']],
+    ...(limit ? { limit } : {})
+  });
+  const requestIds = requests.map((r) => r.id);
+  let paymentStatusByRequest = {};
+  if (requestIds.length) {
+    const requestPayments = await db.Payment.findAll({
+      where: { user_id: userId, request_id: { [Op.in]: requestIds } },
+      attributes: ['request_id', 'status', 'created_at'],
+      order: [['created_at', 'DESC']]
+    });
+    paymentStatusByRequest = requestPayments.reduce((acc, p) => {
+      if (acc[p.request_id] == null) acc[p.request_id] = p.status;
+      return acc;
+    }, {});
+  }
+  return { requests, paymentStatusByRequest };
+}
+
 exports.dashboard = async (req, res) => {
   try {
-    const [requests, payments, notifications, plans] = await Promise.all([
-      db.WasteRequest.findAll({
-        where: { customer_id: req.user.id },
-        include: [{ model: db.Collector, as: 'Collector', include: [{ model: db.User, as: 'User', attributes: ['name', 'phone'] }] }],
-        order: [['scheduled_date', 'DESC'], ['created_at', 'DESC']],
-        limit: 10
-      }),
+    const [{ requests }, payments, notifications, plans] = await Promise.all([
+      getRequestsWithPaymentStatus(req.user.id, 10),
       db.Payment.findAll({ where: { user_id: req.user.id }, order: [['created_at', 'DESC']], limit: 10 }),
       db.Notification.findAll({ where: { user_id: req.user.id }, order: [['created_at', 'DESC']], limit: 10 }),
       db.SubscriptionPlan.findAll({ where: { is_active: true } })
     ]);
 
     const nextCollection = requests.find((r) => ['pending', 'assigned', 'in_progress'].includes(r.status) && r.scheduled_date >= new Date().toISOString().split('T')[0]);
-    const requestIds = requests.map((r) => r.id);
-    let paymentStatusByRequest = {};
-    if (requestIds.length) {
-      const requestPayments = await db.Payment.findAll({
-        where: { user_id: req.user.id, request_id: { [Op.in]: requestIds } },
-        attributes: ['request_id', 'status', 'created_at'],
-        order: [['created_at', 'DESC']]
-      });
-      paymentStatusByRequest = requestPayments.reduce((acc, p) => {
-        if (acc[p.request_id] == null) acc[p.request_id] = p.status;
-        return acc;
-      }, {});
-    }
 
     res.render('customer/dashboard', {
       title: 'Customer Dashboard',
@@ -38,7 +43,21 @@ exports.dashboard = async (req, res) => {
       payments,
       notifications,
       plans,
-      nextCollection,
+      nextCollection
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).render('errors/500', { title: 'Error' });
+  }
+};
+
+exports.myRequests = async (req, res) => {
+  try {
+    const { requests, paymentStatusByRequest } = await getRequestsWithPaymentStatus(req.user.id);
+    res.render('customer/my-requests', {
+      title: 'My Requests',
+      user: req.user,
+      requests,
       paymentStatusByRequest
     });
   } catch (err) {

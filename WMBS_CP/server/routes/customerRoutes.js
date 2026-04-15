@@ -9,6 +9,7 @@ const { validate, schemas } = require('../middleware/validate');
 router.use(authenticate, requireCustomer);
 
 router.get('/', customerController.dashboard);
+router.get('/my-requests', customerController.myRequests);
 router.post('/request-pickup', validate(schemas.wasteRequest), customerController.requestPickup);
 router.post('/requests/:id/cancel', customerController.cancelRequest);
 router.put('/requests/:id', customerController.modifyRequest);
