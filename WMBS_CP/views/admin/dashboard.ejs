@@ -81,7 +81,9 @@
             <h2>Revenue trend</h2>
             <p class="text-muted">Monthly revenue performance</p>
             <p id="revenueChartMeta" class="text-muted" style="margin-bottom:8px;"></p>
-            <canvas id="revenueChart" height="160"></canvas>
+            <div style="height:260px; max-height:40vh; min-height:180px;">
+              <canvas id="revenueChart"></canvas>
+            </div>
           </div>
           <div class="card map-card">
             <h2>Live Collector & Customer Map</h2>
@@ -180,7 +182,8 @@
           },
           options: {
             responsive: true,
-            maintainAspectRatio: false,
+            maintainAspectRatio: true,
+            aspectRatio: 2.2,
             interaction: { mode: 'index', intersect: false },
             scales: {
               y: {
