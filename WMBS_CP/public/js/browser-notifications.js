@@ -35,6 +35,13 @@
     };
   }
 
+  function showInAppNotification(item) {
+    if (typeof window.wmbsNotify !== 'function') return;
+    var title = item.title || appTitle;
+    var message = item.message || 'You have a new notification.';
+    window.wmbsNotify(title + ': ' + message);
+  }
+
   function promptPermissionOnce() {
     if (!supported || !isSecureContextLike) return;
     if (Notification.permission === 'default') {
@@ -54,6 +61,7 @@
         if (!data || !data.success || !Array.isArray(data.notifications)) return;
         data.notifications.forEach(function(item) {
           setLastSeenId(item.id);
+          showInAppNotification(item);
           showNativeNotification(item);
         });
       })
