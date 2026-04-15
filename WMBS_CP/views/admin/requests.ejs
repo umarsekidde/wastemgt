@@ -44,10 +44,30 @@
       <main class="dashboard-main">
         <h1>Collection Requests</h1>
         <input type="hidden" id="csrfToken" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+        <div class="card" style="margin-bottom: 14px;">
+          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            <input type="text" id="requestSearch" class="form-control" placeholder="Search by request ID, customer, or address..." style="min-width:240px; flex:1 1 320px;">
+            <select id="statusFilter" class="form-control" style="width:auto; min-width:180px;">
+              <option value="">All statuses</option>
+              <option value="pending">Pending</option>
+              <option value="assigned">Assigned</option>
+              <option value="in_progress">In progress</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <select id="collectorFilter" class="form-control" style="width:auto; min-width:180px;">
+              <option value="">All collectors</option>
+              <% if (collectors && collectors.length) { collectors.forEach(c => { %>
+                <option value="<%= c.User ? c.User.name : '' %>"><%= c.User ? c.User.name : ('Collector #' + c.id) %></option>
+              <% }); } %>
+              <option value="unassigned">Unassigned</option>
+            </select>
+          </div>
+        </div>
         <div class="card">
           <table class="data-table">
             <thead><tr><th>ID</th><th>Customer</th><th>Address</th><th>Date</th><th>Status</th><th>Collector</th><th>Action</th></tr></thead>
-            <tbody>
+            <tbody id="requestsTableBody">
               <% if (requests && requests.length) { requests.forEach(r => { %>
                 <tr data-request-id="<%= r.id %>">
                   <td><%= r.id %></td>
@@ -88,6 +108,44 @@ fetch('/admin/assign-collector', { method: 'POST', headers: { 'Content-Type': 'a
           .then(r => r.json()).then(d => { if (d.success) location.reload(); else alert(d.message || 'Failed'); }).catch(() => alert('Failed'));
       });
     });
+
+    (function setupRequestFilters() {
+      const searchEl = document.getElementById('requestSearch');
+      const statusEl = document.getElementById('statusFilter');
+      const collectorEl = document.getElementById('collectorFilter');
+      const tableBody = document.getElementById('requestsTableBody');
+      if (!searchEl || !statusEl || !collectorEl || !tableBody) return;
+      const rows = Array.from(tableBody.querySelectorAll('tr')).filter(row => row.querySelectorAll('td').length > 0);
+
+      function normalize(value) {
+        return String(value || '').toLowerCase().trim();
+      }
+
+      function applyFilters() {
+        const searchValue = normalize(searchEl.value);
+        const statusValue = normalize(statusEl.value);
+        const collectorValue = normalize(collectorEl.value);
+
+        rows.forEach(row => {
+          const cells = row.querySelectorAll('td');
+          const id = normalize(cells[0] ? cells[0].textContent : '');
+          const customer = normalize(cells[1] ? cells[1].textContent : '');
+          const address = normalize(cells[2] ? cells[2].textContent : '');
+          const status = normalize(cells[4] ? cells[4].textContent : '');
+          const collector = normalize(cells[5] ? cells[5].textContent : '');
+
+          const searchMatch = !searchValue || id.includes(searchValue) || customer.includes(searchValue) || address.includes(searchValue);
+          const statusMatch = !statusValue || status === statusValue;
+          const collectorMatch = !collectorValue || (collectorValue === 'unassigned' ? (collector === '-' || collector === '') : collector.includes(collectorValue));
+
+          row.style.display = (searchMatch && statusMatch && collectorMatch) ? '' : 'none';
+        });
+      }
+
+      searchEl.addEventListener('input', applyFilters);
+      statusEl.addEventListener('change', applyFilters);
+      collectorEl.addEventListener('change', applyFilters);
+    })();
   </script>
   <script src="/js/common.js"></script>
   <script src="/js/dashboard-ui.js"></script>

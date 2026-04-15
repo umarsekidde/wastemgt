@@ -165,10 +165,7 @@ exports.getTruckLocations = async (req, res) => {
     db.WasteRequest.findAll({
       where: {
         division_id: company.division_id,
-        [Op.or]: [
-          { assigned_collector_id: { [Op.in]: collectorIds } },
-          { status: ['pending', 'assigned', 'in_progress'] }
-        ],
+        status: { [Op.in]: ['pending', 'assigned', 'in_progress'] },
         latitude: { [Op.not]: null },
         longitude: { [Op.not]: null }
       },
