@@ -35,7 +35,29 @@ document.addEventListener('DOMContentLoaded', function () {
         appShell.classList.toggle('sidebar-collapsed');
       });
     }
+
+    // On smaller screens, close sidebar after selecting a nav link.
+    appShell.querySelectorAll('.sidebar a[href]').forEach(function (link) {
+      link.addEventListener('click', function () {
+        if (window.innerWidth <= 1024) appShell.classList.add('sidebar-collapsed');
+      });
+    });
   }
+
+  // Mark active sidebar item based on current route.
+  var currentPath = (window.location && window.location.pathname) ? window.location.pathname.toLowerCase() : '';
+  document.querySelectorAll('.sidebar a[href]').forEach(function (link) {
+    var href = (link.getAttribute('href') || '').toLowerCase();
+    if (!href || href === '/auth/logout') return;
+    var isRootSection = href !== '/' && (currentPath === href || currentPath.indexOf(href + '/') === 0);
+    if (isRootSection) {
+      link.classList.add('active');
+      link.setAttribute('aria-current', 'page');
+    } else {
+      link.classList.remove('active');
+      link.removeAttribute('aria-current');
+    }
+  });
 
   // KPI count-up animation
   var counters = document.querySelectorAll('[data-countup]');
