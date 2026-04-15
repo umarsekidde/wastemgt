@@ -24,7 +24,11 @@ app.set('trust proxy', 1);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '../views'));
 
-app.use(helmet({ contentSecurityPolicy: false }));
+app.use(helmet({
+  contentSecurityPolicy: false,
+  // OSM tile servers require a Referer; strict-origin-when-cross-origin keeps a safe referrer policy.
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
+}));
 app.use(cors({ origin: process.env.CORS_ORIGIN || true, credentials: true }));
 app.use(generalLimiter);
 app.use(express.json());
