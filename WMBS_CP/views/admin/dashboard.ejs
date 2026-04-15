@@ -80,6 +80,7 @@
           <div class="card">
             <h2>Revenue trend</h2>
             <p class="text-muted">Monthly revenue performance</p>
+            <p id="revenueChartMeta" class="text-muted" style="margin-bottom:8px;"></p>
             <canvas id="revenueChart" height="160"></canvas>
           </div>
           <div class="card map-card">
@@ -128,13 +129,82 @@
   <script>
     (function() {
       var revenueData = <%- JSON.stringify(monthlyRevenue || {}) %>;
-      var labels = Object.keys(revenueData).sort();
-      var values = labels.map(function(k) { return revenueData[k]; });
-      if (document.getElementById('revenueChart') && labels.length) {
-        new Chart(document.getElementById('revenueChart'), {
+      var rawLabels = Object.keys(revenueData).sort();
+      var values = rawLabels.map(function(k) { return Number(revenueData[k]) || 0; });
+      var chartEl = document.getElementById('revenueChart');
+      var chartMetaEl = document.getElementById('revenueChartMeta');
+      function formatUGX(value) {
+        return 'UGX ' + (Number(value) || 0).toLocaleString();
+      }
+      function toMonthLabel(isoMonth) {
+        // Expects YYYY-MM and returns readable month label.
+        if (!isoMonth || typeof isoMonth !== 'string' || isoMonth.indexOf('-') === -1) return isoMonth || '';
+        var parts = isoMonth.split('-');
+        var year = Number(parts[0]);
+        var month = Number(parts[1]) - 1;
+        if (!Number.isFinite(year) || !Number.isFinite(month)) return isoMonth;
+        var date = new Date(year, month, 1);
+        return date.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+      }
+      var labels = rawLabels.map(toMonthLabel);
+      var maxValue = values.length ? Math.max.apply(null, values) : 0;
+      var totalRevenue = values.reduce(function(sum, value) { return sum + value; }, 0);
+      if (chartMetaEl) {
+        if (!labels.length) {
+          chartMetaEl.textContent = 'No revenue records yet.';
+        } else if (labels.length === 1) {
+          chartMetaEl.textContent = 'Only one month available (' + labels[0] + '). Add more periods to see a clearer trend.';
+        } else {
+          chartMetaEl.textContent = 'Period: ' + labels[0] + ' to ' + labels[labels.length - 1] + ' • Total: ' + formatUGX(totalRevenue);
+        }
+      }
+      if (chartEl && labels.length) {
+        new Chart(chartEl, {
           type: 'line',
-          data: { labels: labels, datasets: [{ label: 'Revenue (UGX)', data: values, borderColor: '#2EC4B6', backgroundColor: 'rgba(46,196,182,0.15)', tension: 0.4, fill: true }] },
-          options: { responsive: true, scales: { y: { beginAtZero: true, grid: { color: 'rgba(148,163,184,0.25)' } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } }
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Revenue (UGX)',
+              data: values,
+              borderColor: '#0F4C81',
+              borderWidth: 3,
+              pointBackgroundColor: '#2EC4B6',
+              pointBorderColor: '#0F4C81',
+              pointBorderWidth: 1,
+              pointRadius: values.length === 1 ? 6 : 4,
+              pointHoverRadius: 6,
+              backgroundColor: 'rgba(46,196,182,0.20)',
+              tension: 0.3,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+              y: {
+                beginAtZero: true,
+                suggestedMax: maxValue > 0 ? Math.ceil(maxValue * 1.2) : 1000,
+                ticks: {
+                  callback: function(value) { return formatUGX(value); },
+                  maxTicksLimit: 6
+                },
+                grid: { color: 'rgba(148,163,184,0.25)' }
+              },
+              x: { grid: { display: false } }
+            },
+            plugins: {
+              legend: { display: true, position: 'top' },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    return ' ' + formatUGX(context.raw);
+                  }
+                }
+              }
+            }
+          }
         });
       }
       if (typeof initAdminMap === 'function') initAdminMap('map', document.getElementById('lastUpdate'));
