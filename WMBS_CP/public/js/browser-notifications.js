@@ -37,9 +37,14 @@
 
   function showInAppNotification(item) {
     if (typeof window.wmbsNotify !== 'function') return;
-    var title = item.title || appTitle;
-    var message = item.message || 'You have a new notification.';
-    window.wmbsNotify(title + ': ' + message);
+    window.wmbsNotify({
+      source: appTitle,
+      avatarText: String(appTitle || 'W').charAt(0),
+      title: item.title || appTitle,
+      message: item.message || 'You have a new notification.',
+      createdAt: item.created_at,
+      link: item.link || ''
+    });
   }
 
   function promptPermissionOnce() {
