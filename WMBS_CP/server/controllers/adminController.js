@@ -221,15 +221,30 @@ exports.customers = async (req, res) => {
     ],
     order: [['name']]
   });
+  res.render('admin/customers', { title: 'Customers', customers });
+};
+
+exports.complaints = async (req, res) => {
+  const company = await db.Company.findOne({ where: { admin_id: req.user.id } });
+  if (!company) return res.render('admin/complaints', { title: 'Customer Complaints', complaints: [] });
+
+  const customers = await db.User.findAll({
+    where: { role: 'customer', division_id: company.division_id },
+    attributes: ['id']
+  });
   const customerIds = customers.map((c) => c.id);
-  const allComplaints = customerIds.length
+  const complaints = customerIds.length
     ? await db.Complaint.findAll({
         where: { user_id: customerIds },
-        include: [{ model: db.User, as: 'User', attributes: ['id', 'name', 'email'] }],
+        include: [
+          { model: db.User, as: 'User', attributes: ['id', 'name', 'email'] },
+          { model: db.WasteRequest, as: 'WasteRequest', attributes: ['id', 'address'] }
+        ],
         order: [['created_at', 'DESC']]
       })
     : [];
-  res.render('admin/customers', { title: 'Customers', customers, allComplaints });
+
+  res.render('admin/complaints', { title: 'Customer Complaints', complaints });
 };
 
 exports.performance = async (req, res) => {

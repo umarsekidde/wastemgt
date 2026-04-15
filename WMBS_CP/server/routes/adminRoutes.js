@@ -17,6 +17,7 @@ router.get('/api/truck-locations', adminController.getTruckLocations);
 router.get('/api/notifications/latest', notificationController.latestForCurrentUser);
 router.get('/revenue', adminController.revenue);
 router.get('/customers', adminController.customers);
+router.get('/complaints', adminController.complaints);
 router.get('/performance', adminController.performance);
 router.get('/invoice/:id', adminController.generateInvoice);
 
