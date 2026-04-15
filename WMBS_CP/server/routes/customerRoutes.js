@@ -15,6 +15,7 @@ router.post('/requests/:id/cancel', customerController.cancelRequest);
 router.put('/requests/:id', customerController.modifyRequest);
 router.get('/complaints', customerController.complaints);
 router.post('/complaints', validate(schemas.complaint), customerController.createComplaint);
+router.post('/complaints/:id/reply', customerController.replyComplaint);
 router.get('/notifications', customerController.notifications);
 router.get('/api/notifications/latest', notificationController.latestForCurrentUser);
 router.get('/payment-history', customerController.paymentHistory);

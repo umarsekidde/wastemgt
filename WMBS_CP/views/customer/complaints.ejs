@@ -42,31 +42,107 @@
         </div>
       </header>
       <main class="dashboard-main">
-    <h1>My Complaints</h1>
-    <form method="post" action="/customer/complaints" class="card customer-form-card" style="max-width:520px;margin-bottom:20px">
-      <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-      <label>Subject</label>
-      <input type="text" name="subject" required class="form-control">
-      <label>Message</label>
-      <textarea name="message" required class="form-control" rows="4"></textarea>
-      <button type="submit" class="btn btn-primary" style="margin-top:12px;">Submit ticket</button>
-    </form>
-    <div class="card">
-      <div class="table-wrap">
-      <table>
-        <thead><tr><th>Ticket</th><th>Subject</th><th>Status</th><th>Date</th></tr></thead>
-        <tbody>
-          <% if (complaints && complaints.length) { complaints.forEach(function(c) { %>
-            <tr><td><%= c.ticket_number || c.id %></td><td><%= c.subject %></td><td><%= c.status %></td><td><%= c.created_at ? new Date(c.created_at).toISOString().split('T')[0] : '-' %></td></tr>
-          <% }); } else { %><tr><td colspan="4">No complaints</td></tr><% } %>
-        </tbody>
-      </table>
-      </div>
-    </div>
+        <h1>My Complaints Chat</h1>
+        <input type="hidden" id="csrfToken" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+        <form method="post" action="/customer/complaints" class="card customer-form-card" style="max-width:620px;margin-bottom:20px">
+          <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+          <label>Subject</label>
+          <input type="text" name="subject" required class="form-control" placeholder="What issue are you facing?">
+          <label>Message</label>
+          <textarea name="message" required class="form-control" rows="4" placeholder="Type your complaint details..."></textarea>
+          <button type="submit" class="btn btn-primary" style="margin-top:12px;">Submit ticket</button>
+        </form>
+        <div class="card">
+          <div class="chat-room">
+            <% if (complaints && complaints.length) { complaints.forEach(function(c) { %>
+              <div class="chat-date-row complaint-card-head" data-open-id="<%= c.id %>">
+                <span><%= c.created_at ? new Date(c.created_at).toLocaleDateString() : '-' %></span>
+              </div>
+              <div class="chat-message chat-message-in complaint-card-head" data-open-id="<%= c.id %>">
+                <div class="chat-meta">
+                  <strong>You</strong>
+                  <span>#<%= c.ticket_number || c.id %></span>
+                </div>
+                <div class="chat-subject"><%= c.subject %></div>
+                <div class="chat-body"><%= c.message %></div>
+                <div class="chat-foot">
+                  <span class="chat-status chat-status-<%= (c.status || 'open').replace('_', '-') %>"><%= c.status || 'open' %></span>
+                  <span class="chat-time"><%= c.created_at ? new Date(c.created_at).toLocaleTimeString() : '' %></span>
+                </div>
+              </div>
+              <div class="complaint-thread" id="thread-<%= c.id %>">
+                <% if (c.thread && c.thread.length) { c.thread.forEach(function(msg) { %>
+                  <div class="chat-message <%= msg.by === 'admin' ? 'chat-message-out' : 'chat-message-in' %>">
+                    <div class="chat-meta"><strong><%= msg.by === 'admin' ? (msg.name || 'Admin') : 'You' %></strong></div>
+                    <div class="chat-body"><%= msg.message %></div>
+                    <div class="chat-foot">
+                      <span class="chat-time"><%= msg.createdAt ? new Date(msg.createdAt).toLocaleString() : '' %></span>
+                    </div>
+                  </div>
+                <% }); } %>
+                <form class="complaint-reply-form" data-id="<%= c.id %>" style="margin-top:8px;">
+                  <textarea name="message" class="form-control" rows="3" placeholder="Write a follow-up message..." required></textarea>
+                  <div style="margin-top:8px;">
+                    <button type="submit" class="btn btn-primary btn-sm">Send Message</button>
+                  </div>
+                </form>
+              </div>
+            <% }); } else { %>
+              <p class="text-muted">No complaints yet. Start by submitting one above.</p>
+            <% } %>
+          </div>
+        </div>
       </main>
     </div>
   </div>
   <script src="/js/common.js"></script>
   <script src="/js/dashboard-ui.js"></script>
+  <script>
+    (function() {
+      document.querySelectorAll('.complaint-card-head').forEach(function(el) {
+        el.addEventListener('click', function() {
+          var id = this.getAttribute('data-open-id');
+          var thread = document.getElementById('thread-' + id);
+          if (!thread) return;
+          thread.classList.toggle('is-open');
+        });
+      });
+
+      document.querySelectorAll('.complaint-reply-form').forEach(function(form) {
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          var complaintId = form.getAttribute('data-id');
+          var messageEl = form.querySelector('textarea[name="message"]');
+          var submitBtn = form.querySelector('button[type="submit"]');
+          var csrf = (document.getElementById('csrfToken') || {}).value || '';
+          var message = (messageEl && messageEl.value) ? messageEl.value.trim() : '';
+          if (!message) return;
+
+          submitBtn.disabled = true;
+          fetch('/customer/complaints/' + complaintId + '/reply', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'csrf-token': csrf
+            },
+            body: JSON.stringify({ message: message, _csrf: csrf })
+          })
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+              if (!d || !d.success) throw new Error((d && d.message) || 'Failed to send message');
+              window.location.reload();
+            })
+            .catch(function(err) {
+              alert(err.message || 'Failed to send message');
+            })
+            .finally(function() {
+              submitBtn.disabled = false;
+            });
+        });
+      });
+    })();
+  </script>
 </body>
 </html>

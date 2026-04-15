@@ -46,18 +46,38 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Mark active sidebar item based on current route.
   var currentPath = (window.location && window.location.pathname) ? window.location.pathname.toLowerCase() : '';
-  document.querySelectorAll('.sidebar a[href]').forEach(function (link) {
+  var navLinks = Array.from(document.querySelectorAll('.sidebar a[href]'));
+  var bestMatch = null;
+  var bestScore = -1;
+
+  navLinks.forEach(function (link) {
+    link.classList.remove('active');
+    link.removeAttribute('aria-current');
+
     var href = (link.getAttribute('href') || '').toLowerCase();
     if (!href || href === '/auth/logout') return;
-    var isRootSection = href !== '/' && (currentPath === href || currentPath.indexOf(href + '/') === 0);
-    if (isRootSection) {
-      link.classList.add('active');
-      link.setAttribute('aria-current', 'page');
-    } else {
-      link.classList.remove('active');
-      link.removeAttribute('aria-current');
+
+    var isMatch = false;
+    var score = -1;
+
+    if (currentPath === href) {
+      isMatch = true;
+      score = href.length + 1000; // exact matches always win
+    } else if (href !== '/' && currentPath.indexOf(href + '/') === 0) {
+      isMatch = true;
+      score = href.length; // prefer the most specific parent path
+    }
+
+    if (isMatch && score > bestScore) {
+      bestScore = score;
+      bestMatch = link;
     }
   });
+
+  if (bestMatch) {
+    bestMatch.classList.add('active');
+    bestMatch.setAttribute('aria-current', 'page');
+  }
 
   // KPI count-up animation
   var counters = document.querySelectorAll('[data-countup]');

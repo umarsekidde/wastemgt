@@ -25,6 +25,21 @@ async function getRequestsWithPaymentStatus(userId, limit) {
   return { requests, paymentStatusByRequest };
 }
 
+function parseComplaintThread(resolutionNotes) {
+  if (!resolutionNotes) return [];
+  try {
+    const parsed = JSON.parse(resolutionNotes);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((item) => item && item.message && item.by);
+  } catch (_) {
+    return [];
+  }
+}
+
+function serializeComplaintThread(thread) {
+  return JSON.stringify(thread || []);
+}
+
 exports.dashboard = async (req, res) => {
   try {
     const [{ requests }, payments, notifications, plans] = await Promise.all([
@@ -155,7 +170,14 @@ exports.modifyRequest = async (req, res) => {
 
 exports.complaints = async (req, res) => {
   const complaints = await db.Complaint.findAll({ where: { user_id: req.user.id }, order: [['created_at', 'DESC']], include: [{ model: db.WasteRequest, as: 'WasteRequest', attributes: ['id'] }] });
-  res.render('customer/complaints', { title: 'My Complaints', complaints });
+  const normalized = complaints.map((co) => {
+    const json = co.toJSON();
+    return {
+      ...json,
+      thread: parseComplaintThread(json.resolution_notes)
+    };
+  });
+  res.render('customer/complaints', { title: 'My Complaints', complaints: normalized });
 };
 
 exports.createComplaint = async (req, res) => {
@@ -166,13 +188,61 @@ exports.createComplaint = async (req, res) => {
       request_id: req.body.request_id || null,
       subject: req.body.subject,
       message: req.body.message,
-      ticket_number: ticketNumber
+      ticket_number: ticketNumber,
+      resolution_notes: serializeComplaintThread([])
     });
     if (req.xhr) return res.json({ success: true, ticketNumber });
     res.redirect('/customer/complaints');
   } catch (err) {
     if (req.xhr) return res.status(400).json({ success: false, message: err.message });
     res.redirect('/customer/complaints');
+  }
+};
+
+exports.replyComplaint = async (req, res) => {
+  try {
+    const complaint = await db.Complaint.findOne({
+      where: { id: req.params.id, user_id: req.user.id }
+    });
+    if (!complaint) return res.status(404).json({ success: false, message: 'Complaint not found' });
+
+    const message = String(req.body.message || '').trim();
+    if (!message) return res.status(400).json({ success: false, message: 'Message is required' });
+
+    const thread = parseComplaintThread(complaint.resolution_notes);
+    thread.push({
+      by: 'customer',
+      name: req.user.name || 'Customer',
+      message,
+      createdAt: new Date().toISOString()
+    });
+
+    await complaint.update({
+      resolution_notes: serializeComplaintThread(thread),
+      status: complaint.status === 'closed' ? 'open' : complaint.status
+    });
+
+    let divisionId = req.user.division_id;
+    if (divisionId == null && req.user.company_id) {
+      const custCompany = await db.Company.findByPk(req.user.company_id, { attributes: ['division_id'] });
+      if (custCompany) divisionId = custCompany.division_id;
+    }
+    if (divisionId != null) {
+      const company = await db.Company.findOne({ where: { division_id: divisionId, is_active: true } });
+      if (company && company.admin_id) {
+        await db.Notification.create({
+          user_id: company.admin_id,
+          title: 'Complaint follow-up',
+          message: `${req.user.name} replied to complaint #${complaint.ticket_number || complaint.id}: ${message}`,
+          type: 'complaint',
+          link: '/admin/complaints'
+        }).catch(() => {});
+      }
+    }
+
+    return res.json({ success: true });
+  } catch (err) {
+    return res.status(400).json({ success: false, message: err.message || 'Unable to send message' });
   }
 };
 
