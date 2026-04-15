@@ -47,6 +47,12 @@
     grid-template-columns: 1fr;
   }
 
+  .table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   table {
     display: block;
     width: 100%;
@@ -59,6 +65,32 @@
   td {
     white-space: nowrap;
     padding: 8px;
+  }
+
+  .customer-form-card {
+    max-width: 100% !important;
+  }
+
+  .action-cell {
+    min-width: 180px;
+  }
+
+  .action-cell .btn {
+    margin-bottom: 6px;
+  }
+
+  .customer-payment-methods {
+    flex-wrap: wrap;
+  }
+
+  .customer-payment-methods .btn {
+    flex: 1 1 48%;
+    min-width: 130px;
+  }
+
+  #payNowBtn,
+  #closePaymentPanelBtn {
+    width: 100%;
   }
 }
 

@@ -4,6 +4,34 @@
     return el ? el.value : '';
   }
 
+  function setBtnLoading(btn, isLoading, loadingText) {
+    if (!btn) return;
+    if (isLoading) {
+      if (!btn.dataset.originalText) btn.dataset.originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = loadingText || 'Please wait...';
+      return;
+    }
+    btn.disabled = false;
+    if (btn.dataset.originalText) {
+      btn.textContent = btn.dataset.originalText;
+      delete btn.dataset.originalText;
+    }
+  }
+
+  function parseResponse(response) {
+    return response.text().then(function(raw) {
+      var data = {};
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch (_) {
+        data = { message: raw || 'Request failed' };
+      }
+      if (!response.ok) throw new Error(data.message || 'Request failed');
+      return data;
+    });
+  }
+
   function extractWeightFromNotes(notes) {
     if (!notes) return '';
     var match = String(notes).match(/Weight:\s*([0-9.]+)/i);
@@ -32,6 +60,8 @@
     requestForm.addEventListener('submit', function(e) {
       e.preventDefault();
       var form = e.target;
+      var submitBtn = form.querySelector('button[type="submit"]');
+      setBtnLoading(submitBtn, true, 'Submitting...');
       var addressVal = (form.address && form.address.value) ? form.address.value.trim() : '';
       var latEl = document.getElementById('pickupLat');
       var lngEl = document.getElementById('pickupLng');
@@ -56,14 +86,12 @@
         },
         body: JSON.stringify(data)
       }).then(function(r) {
-        return r.json().then(function(d) {
-          if (!r.ok) throw new Error(d.message || 'Request failed');
-          return d;
-        });
+        return parseResponse(r);
       }).then(function(d) {
         if (d.success) location.reload();
         else alert(d.message || 'Failed');
-      }).catch(function(e) { alert(e.message || 'Request failed'); });
+      }).catch(function(e) { alert(e.message || 'Request failed'); })
+        .finally(function() { setBtnLoading(submitBtn, false); });
     });
   }
 
@@ -72,6 +100,7 @@
       var id = this.getAttribute('data-id');
       if (!id || !confirm('Cancel this request?')) return;
       var csrf = getCsrf();
+      setBtnLoading(this, true, 'Cancelling...');
       fetch('/customer/requests/' + id + '/cancel', {
         method: 'POST',
         credentials: 'include',
@@ -82,14 +111,12 @@
         },
         body: JSON.stringify({ _csrf: csrf })
       }).then(function(r) {
-        return r.json().then(function(d) {
-          if (!r.ok) throw new Error(d.message || 'Cancel failed');
-          return d;
-        });
+        return parseResponse(r);
       }).then(function(d) {
         if (d.success) location.reload();
         else alert(d.message || 'Cancel failed');
-      }).catch(function(e) { alert(e.message || 'Cancel failed'); });
+      }).catch(function(e) { alert(e.message || 'Cancel failed'); })
+        .finally(function() { setBtnLoading(btn, false); });
     });
   });
 
@@ -120,12 +147,14 @@
   var payNowBtn = document.getElementById('payNowBtn');
   if (payNowBtn) {
     payNowBtn.addEventListener('click', function() {
+      if (payNowBtn.disabled) return;
       var requestId = document.getElementById('paymentRequestId') ? document.getElementById('paymentRequestId').value : '';
       var amount = parseFloat((document.getElementById('paymentTotal') || {}).textContent || '0');
       var phone = (document.getElementById('paymentPhone') || {}).value || '';
       var email = (document.getElementById('paymentEmail') || {}).value || '';
       if (!requestId) return alert('Select a request to pay for.');
       if (!phone.trim()) return alert('Phone number is required.');
+      setBtnLoading(payNowBtn, true, 'Initializing payment...');
       var csrf = getCsrf();
       fetch('/payment/initialize', {
         method: 'POST',
@@ -144,14 +173,12 @@
           _csrf: csrf
         })
       }).then(function(r) {
-        return r.json().then(function(d) {
-          if (!r.ok) throw new Error(d.message || 'Payment failed');
-          return d;
-        });
+        return parseResponse(r);
       }).then(function(d) {
         if (d.success && d.link) window.location.href = d.link;
         else alert(d.message || 'Payment failed');
-      }).catch(function(e) { alert(e.message || 'Payment failed'); });
+      }).catch(function(e) { alert(e.message || 'Payment failed'); })
+        .finally(function() { setBtnLoading(payNowBtn, false); });
     });
   }
 
@@ -160,6 +187,7 @@
       var requestId = this.getAttribute('data-id');
       if (!requestId) return;
       var csrf = getCsrf();
+      setBtnLoading(this, true, 'Confirming...');
       fetch('/payment/confirm', {
         method: 'POST',
         credentials: 'include',
@@ -170,14 +198,12 @@
         },
         body: JSON.stringify({ request_id: parseInt(requestId, 10), _csrf: csrf })
       }).then(function(r) {
-        return r.json().then(function(d) {
-          if (!r.ok) throw new Error(d.message || 'Payment confirmation failed');
-          return d;
-        });
+        return parseResponse(r);
       }).then(function(d) {
         alert(d.message || 'Payment confirmed');
         location.reload();
-      }).catch(function(e) { alert(e.message || 'Payment confirmation failed'); });
+      }).catch(function(e) { alert(e.message || 'Payment confirmation failed'); })
+        .finally(function() { setBtnLoading(btn, false); });
     });
   });
 })();
