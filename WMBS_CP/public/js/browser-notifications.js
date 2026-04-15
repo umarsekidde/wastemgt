@@ -5,6 +5,7 @@
   var pollMs = Number(cfg.pollMs || 15000);
   var appTitle = cfg.appTitle || 'WMBS';
   var inAppPosition = cfg.inAppPosition || 'bottom';
+  var showBacklogOnFirstLoad = !!cfg.showBacklogOnFirstLoad;
 
   if (!endpoint || typeof fetch !== 'function' || typeof window === 'undefined') return;
 
@@ -79,6 +80,7 @@
   // first poll sets last seen id only if empty.
   function initializeBaseline() {
     if (getLastSeenId() > 0) return Promise.resolve();
+    if (showBacklogOnFirstLoad) return Promise.resolve();
     return fetch(endpoint + '?afterId=0', {
       method: 'GET',
       credentials: 'include',
