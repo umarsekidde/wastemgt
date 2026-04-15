@@ -94,24 +94,6 @@
           </div>
         </section>
 
-        <section class="dashboard-section">
-          <h2>Recent Requests</h2>
-          <div class="card">
-            <table>
-              <thead><tr><th>ID</th><th>Customer</th><th>Date</th><th>Status</th></tr></thead>
-              <tbody>
-                <% if (requests && requests.length) { requests.forEach(function(r) { %>
-                  <tr>
-                    <td><%= r.id %></td>
-                    <td><%= r.User ? r.User.name : '-' %></td>
-                    <td><%= r.scheduled_date || '-' %></td>
-                    <td><%= r.status %></td>
-                  </tr>
-                <% }); } else { %><tr><td colspan="4">No requests</td></tr><% } %>
-              </tbody>
-            </table>
-          </div>
-        </section>
       </main>
     </div>
   </div>
