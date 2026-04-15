@@ -77,6 +77,7 @@ function removeToast(toast) {
 // Toast helper (supports string and rich object format)
 window.wmbsNotify = function (payload) {
   var isRich = payload && typeof payload === 'object';
+  var autoCloseMs = isRich ? Number(payload.autoCloseMs || 0) : 3000;
   var toast = document.createElement('div');
   toast.className = 'wmbs-toast';
   if (!isRich) {
@@ -116,8 +117,10 @@ window.wmbsNotify = function (payload) {
   }
   document.body.appendChild(toast);
   setTimeout(function () { toast.classList.add('show'); }, 10);
-  setTimeout(function () {
-    removeToast(toast);
-  }, isRich ? 9000 : 3000);
+  if (autoCloseMs > 0) {
+    setTimeout(function () {
+      removeToast(toast);
+    }, autoCloseMs);
+  }
 };
 
