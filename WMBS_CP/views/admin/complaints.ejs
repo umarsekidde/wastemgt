@@ -45,13 +45,14 @@
 
       <main class="dashboard-main">
         <h1>Complaints Chat Room</h1>
+        <input type="hidden" id="csrfToken" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
         <div class="card">
           <div class="chat-room">
             <% if (complaints && complaints.length) { complaints.forEach(function(co) { %>
-              <div class="chat-date-row">
+              <div class="chat-date-row complaint-card-head" data-open-id="<%= co.id %>">
                 <span><%= co.created_at ? new Date(co.created_at).toLocaleDateString() : '-' %></span>
               </div>
-              <div class="chat-message chat-message-in">
+              <div class="chat-message chat-message-in complaint-card-head" data-open-id="<%= co.id %>">
                 <div class="chat-meta">
                   <strong><%= co.User ? co.User.name : 'Customer' %></strong>
                   <% if (co.User && co.User.email) { %><span>&lt;<%= co.User.email %>&gt;</span><% } %>
@@ -65,6 +66,30 @@
                   <% } %>
                   <span class="chat-time"><%= co.created_at ? new Date(co.created_at).toLocaleTimeString() : '' %></span>
                 </div>
+              </div>
+              <div class="complaint-thread" id="thread-<%= co.id %>">
+                <% if (co.thread && co.thread.length) { co.thread.forEach(function(msg) { %>
+                  <div class="chat-message chat-message-out">
+                    <div class="chat-meta"><strong><%= msg.name || 'Admin' %></strong></div>
+                    <div class="chat-body"><%= msg.message %></div>
+                    <div class="chat-foot">
+                      <span class="chat-time"><%= msg.createdAt ? new Date(msg.createdAt).toLocaleString() : '' %></span>
+                    </div>
+                  </div>
+                <% }); } %>
+                <form class="complaint-reply-form" data-id="<%= co.id %>" style="margin-top:8px;">
+                  <textarea name="message" class="form-control" rows="3" placeholder="Type your response..." required></textarea>
+                  <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:8px;">
+                    <select name="status" class="form-control" style="width:auto; min-width:160px;">
+                      <option value="">Keep current status (<%= co.status || 'open' %>)</option>
+                      <option value="open">Open</option>
+                      <option value="in_progress">In Progress</option>
+                      <option value="resolved">Resolved</option>
+                      <option value="closed">Closed</option>
+                    </select>
+                    <button type="submit" class="btn btn-primary btn-sm">Send Reply</button>
+                  </div>
+                </form>
               </div>
             <% }); } else { %>
               <p class="text-muted">No complaints from customers yet.</p>
@@ -86,5 +111,53 @@
     };
   </script>
   <script src="/js/browser-notifications.js"></script>
+  <script>
+    (function() {
+      document.querySelectorAll('.complaint-card-head').forEach(function(el) {
+        el.addEventListener('click', function() {
+          var id = this.getAttribute('data-open-id');
+          var thread = document.getElementById('thread-' + id);
+          if (!thread) return;
+          thread.classList.toggle('is-open');
+        });
+      });
+
+      document.querySelectorAll('.complaint-reply-form').forEach(function(form) {
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          var complaintId = form.getAttribute('data-id');
+          var messageEl = form.querySelector('textarea[name="message"]');
+          var statusEl = form.querySelector('select[name="status"]');
+          var submitBtn = form.querySelector('button[type="submit"]');
+          var csrf = (document.getElementById('csrfToken') || {}).value || '';
+          var message = (messageEl && messageEl.value) ? messageEl.value.trim() : '';
+          if (!message) return;
+
+          submitBtn.disabled = true;
+          fetch('/admin/complaints/' + complaintId + '/reply', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'csrf-token': csrf
+            },
+            body: JSON.stringify({ message: message, status: statusEl ? statusEl.value : '', _csrf: csrf })
+          })
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+              if (!d || !d.success) throw new Error((d && d.message) || 'Failed to send reply');
+              window.location.reload();
+            })
+            .catch(function(err) {
+              alert(err.message || 'Failed to send reply');
+            })
+            .finally(function() {
+              submitBtn.disabled = false;
+            });
+        });
+      });
+    })();
+  </script>
 </body>
 </html>

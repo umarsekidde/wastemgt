@@ -2,6 +2,21 @@ const db = require('../models');
 const { Op } = require('sequelize');
 const { getMonthExpr } = require('../utils/dbHelpers');
 
+function parseComplaintThread(resolutionNotes) {
+  if (!resolutionNotes) return [];
+  try {
+    const parsed = JSON.parse(resolutionNotes);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((item) => item && item.message && item.by);
+  } catch (_) {
+    return [];
+  }
+}
+
+function serializeComplaintThread(thread) {
+  return JSON.stringify(thread || []);
+}
+
 exports.dashboard = async (req, res) => {
   try {
     const company = await db.Company.findOne({ where: { admin_id: req.user.id }, include: [{ model: db.Division, as: 'Division' }] });
@@ -244,7 +259,60 @@ exports.complaints = async (req, res) => {
       })
     : [];
 
-  res.render('admin/complaints', { title: 'Customer Complaints', complaints });
+  const normalized = complaints.map((co) => {
+    const json = co.toJSON();
+    return {
+      ...json,
+      thread: parseComplaintThread(json.resolution_notes)
+    };
+  });
+
+  res.render('admin/complaints', { title: 'Customer Complaints', complaints: normalized });
+};
+
+exports.replyComplaint = async (req, res) => {
+  try {
+    const company = await db.Company.findOne({ where: { admin_id: req.user.id } });
+    if (!company) return res.status(403).json({ success: false, message: 'No company assigned' });
+
+    const complaint = await db.Complaint.findByPk(req.params.id, {
+      include: [{ model: db.User, as: 'User', attributes: ['id', 'division_id'] }]
+    });
+    if (!complaint || !complaint.User || complaint.User.division_id !== company.division_id) {
+      return res.status(404).json({ success: false, message: 'Complaint not found' });
+    }
+
+    const message = String(req.body.message || '').trim();
+    const status = String(req.body.status || '').trim();
+    const allowedStatuses = ['open', 'in_progress', 'resolved', 'closed'];
+    if (!message) return res.status(400).json({ success: false, message: 'Reply message is required' });
+    if (status && !allowedStatuses.includes(status)) return res.status(400).json({ success: false, message: 'Invalid complaint status' });
+
+    const thread = parseComplaintThread(complaint.resolution_notes);
+    thread.push({
+      by: 'admin',
+      name: req.user.name || 'Admin',
+      message,
+      createdAt: new Date().toISOString()
+    });
+
+    await complaint.update({
+      resolution_notes: serializeComplaintThread(thread),
+      ...(status ? { status } : {})
+    });
+
+    await db.Notification.create({
+      user_id: complaint.user_id,
+      title: 'Complaint response',
+      message: `Admin replied to your complaint #${complaint.ticket_number || complaint.id}: ${message}`,
+      type: 'complaint',
+      link: '/customer/complaints'
+    }).catch(() => {});
+
+    return res.json({ success: true, message: 'Reply sent' });
+  } catch (err) {
+    return res.status(400).json({ success: false, message: err.message || 'Unable to send reply' });
+  }
 };
 
 exports.performance = async (req, res) => {

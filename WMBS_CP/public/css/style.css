@@ -527,6 +527,13 @@ body.dark-mode .request-step-cancelled {
   border-top-left-radius: 4px;
 }
 
+.chat-message-out {
+  align-self: flex-end;
+  background: #dcf8c6;
+  border: 1px solid #c9efad;
+  border-top-right-radius: 4px;
+}
+
 .chat-meta {
   font-size: 0.78rem;
   color: #4b5563;
@@ -598,8 +605,37 @@ body.dark-mode .chat-message-in {
   border-color: #334155;
 }
 
+body.dark-mode .chat-message-out {
+  background: #14532d;
+  border-color: #166534;
+}
+
 body.dark-mode .chat-meta,
 body.dark-mode .chat-ticket,
 body.dark-mode .chat-foot {
   color: #cbd5e1;
+}
+
+.complaint-card-head {
+  cursor: pointer;
+}
+
+.complaint-thread {
+  display: none;
+  margin: -2px 0 10px;
+  padding: 8px 10px;
+  border-left: 3px solid #d1d5db;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.complaint-thread.is-open {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+body.dark-mode .complaint-thread {
+  background: #0f172a;
+  border-left-color: #334155;
 }

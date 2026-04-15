@@ -18,6 +18,7 @@ router.get('/api/notifications/latest', notificationController.latestForCurrentU
 router.get('/revenue', adminController.revenue);
 router.get('/customers', adminController.customers);
 router.get('/complaints', adminController.complaints);
+router.post('/complaints/:id/reply', adminController.replyComplaint);
 router.get('/performance', adminController.performance);
 router.get('/invoice/:id', adminController.generateInvoice);
 
