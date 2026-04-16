@@ -6,6 +6,7 @@
   var appTitle = cfg.appTitle || 'WMBS';
   var inAppPosition = cfg.inAppPosition || 'bottom';
   var showBacklogOnFirstLoad = !!cfg.showBacklogOnFirstLoad;
+  var readEndpointBase = cfg.readEndpointBase || endpoint.replace(/\/notifications\/latest$/, '');
 
   if (!endpoint || typeof fetch !== 'function' || typeof window === 'undefined') return;
 
@@ -31,10 +32,21 @@
     var body = item.message || 'You have a new notification.';
     var n = new Notification(title, { body: body, tag: 'wmbs-' + String(item.id) });
     n.onclick = function() {
+      markRead(item.id);
       window.focus();
       if (item.link) window.location.href = item.link;
       n.close();
     };
+  }
+
+  function markRead(id) {
+    var n = parseInt(id, 10);
+    if (!Number.isFinite(n) || n <= 0) return;
+    fetch(readEndpointBase + '/notifications/' + encodeURIComponent(n) + '/read', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Accept': 'application/json' }
+    }).catch(function() {});
   }
 
   function showInAppNotification(item) {
@@ -46,7 +58,9 @@
       message: item.message || 'You have a new notification.',
       createdAt: item.created_at,
       link: item.link || '',
-      position: inAppPosition
+      position: inAppPosition,
+      onDismiss: function() { markRead(item.id); },
+      onOpen: function() { markRead(item.id); }
     });
   }
 

@@ -7,7 +7,8 @@ exports.latestForCurrentUser = async (req, res) => {
     const notifications = await db.Notification.findAll({
       where: {
         user_id: req.user.id,
-        id: { [Op.gt]: afterId }
+        id: { [Op.gt]: afterId },
+        read_status: false
       },
       attributes: ['id', 'title', 'message', 'type', 'link', 'created_at'],
       order: [['id', 'ASC']],
@@ -20,6 +21,19 @@ exports.latestForCurrentUser = async (req, res) => {
     });
   } catch (err) {
     return res.status(400).json({ success: false, message: err.message || 'Unable to load notifications' });
+  }
+};
+
+exports.markReadForCurrentUser = async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!id) return res.status(400).json({ success: false, message: 'Invalid notification id' });
+    const notification = await db.Notification.findOne({ where: { id, user_id: req.user.id } });
+    if (!notification) return res.status(404).json({ success: false, message: 'Notification not found' });
+    if (!notification.read_status) await notification.update({ read_status: true });
+    return res.json({ success: true });
+  } catch (err) {
+    return res.status(400).json({ success: false, message: err.message || 'Unable to mark notification as read' });
   }
 };
 

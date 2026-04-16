@@ -15,6 +15,7 @@ router.get('/requests', adminController.requests);
 router.post('/requests/:id/approve', adminController.approveRequest);
 router.get('/api/truck-locations', adminController.getTruckLocations);
 router.get('/api/notifications/latest', notificationController.latestForCurrentUser);
+router.post('/api/notifications/:id/read', notificationController.markReadForCurrentUser);
 router.get('/revenue', adminController.revenue);
 router.get('/customers', adminController.customers);
 router.get('/complaints', adminController.complaints);

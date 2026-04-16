@@ -18,5 +18,6 @@ router.post('/api/confirm-complete/:id', collectorController.uploadProof, collec
 router.post('/api/emergency', collectorController.reportEmergency);
 router.get('/api/location-history', collectorController.getMyLocationHistory);
 router.get('/api/notifications/latest', notificationController.latestForCurrentUser);
+router.post('/api/notifications/:id/read', notificationController.markReadForCurrentUser);
 
 module.exports = router;

@@ -153,9 +153,11 @@ window.wmbsNotify = function (payload) {
     toast.querySelector('.wmbs-toast-message').textContent = message;
 
     toast.querySelector('[data-action="dismiss"]').addEventListener('click', function () {
+      if (typeof payload.onDismiss === 'function') payload.onDismiss();
       removeToast(toast);
     });
     toast.querySelector('[data-action="open"]').addEventListener('click', function () {
+      if (typeof payload.onOpen === 'function') payload.onOpen();
       if (payload.link) window.location.href = payload.link;
       removeToast(toast);
     });
