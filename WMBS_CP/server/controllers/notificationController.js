@@ -1,8 +1,15 @@
 const db = require('../models');
 const { Op } = require('sequelize');
+const { notifyDueScheduledRequests } = require('../utils/scheduledRequests');
 
 exports.latestForCurrentUser = async (req, res) => {
   try {
+    if (req.user && req.user.role === 'customer') {
+      await notifyDueScheduledRequests({ customerId: req.user.id });
+    } else if (req.user && req.user.role === 'admin') {
+      const company = await db.Company.findOne({ where: { admin_id: req.user.id }, attributes: ['division_id'] });
+      if (company && company.division_id) await notifyDueScheduledRequests({ divisionId: company.division_id });
+    }
     const afterId = parseInt(req.query.afterId, 10) || 0;
     const notifications = await db.Notification.findAll({
       where: {

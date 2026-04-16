@@ -1,6 +1,7 @@
 const db = require('../models');
 const { Op } = require('sequelize');
 const { getMonthExpr } = require('../utils/dbHelpers');
+const { notifyDueScheduledRequests } = require('../utils/scheduledRequests');
 
 function parseComplaintThread(resolutionNotes) {
   if (!resolutionNotes) return [];
@@ -21,6 +22,7 @@ exports.dashboard = async (req, res) => {
   try {
     const company = await db.Company.findOne({ where: { admin_id: req.user.id }, include: [{ model: db.Division, as: 'Division' }] });
     if (!company) return res.status(403).render('errors/403', { title: 'No company assigned' });
+    await notifyDueScheduledRequests({ divisionId: company.division_id });
 
     const [collectors, requests, revenueResult, collectorsWithLocation, customers] = await Promise.all([
       db.Collector.findAll({
@@ -105,7 +107,12 @@ exports.assignCollector = async (req, res) => {
     if (!company) return res.status(403).json({ success: false, message: 'No company assigned' });
     const collector = await db.Collector.findOne({ where: { id: collectorId, company_id: company.id } });
     if (!collector) return res.status(403).json({ success: false, message: 'Collector not in your company' });
-    const wasteRequest = await db.WasteRequest.findByPk(requestId, { attributes: ['address'] });
+    const wasteRequest = await db.WasteRequest.findByPk(requestId, { attributes: ['address', 'scheduled_date', 'status'] });
+    if (!wasteRequest) return res.status(404).json({ success: false, message: 'Request not found' });
+    const today = new Date().toISOString().split('T')[0];
+    if (wasteRequest.scheduled_date && wasteRequest.scheduled_date > today) {
+      return res.status(400).json({ success: false, message: `This request is scheduled for ${wasteRequest.scheduled_date} and cannot be assigned yet.` });
+    }
     await db.WasteRequest.update(
       { status: 'assigned', assigned_collector_id: collectorId },
       { where: { id: requestId } }
@@ -133,6 +140,7 @@ exports.requests = async (req, res) => {
   if (!company) {
     return res.render('admin/requests', { title: 'Collection Requests', requests: [], collectors: [] });
   }
+  await notifyDueScheduledRequests({ divisionId: company.division_id });
   const collectorIds = (await db.Collector.findAll({ where: { company_id: company.id }, attributes: ['id'] })).map((c) => c.id);
   const requests = await db.WasteRequest.findAll({
     where: {
@@ -159,6 +167,10 @@ exports.approveRequest = async (req, res) => {
     const collectorIds = (await db.Collector.findAll({ where: { company_id: company.id }, attributes: ['id'] })).map((c) => c.id);
     const reqRecord = await db.WasteRequest.findByPk(req.params.id);
     if (!reqRecord || !collectorIds.includes(reqRecord.assigned_collector_id)) return res.status(403).json({ success: false });
+    const today = new Date().toISOString().split('T')[0];
+    if (reqRecord.scheduled_date && reqRecord.scheduled_date > today) {
+      return res.status(400).json({ success: false, message: `This request is scheduled for ${reqRecord.scheduled_date} and cannot be activated yet.` });
+    }
     await reqRecord.update({ status: 'assigned' });
     res.json({ success: true });
   } catch (err) {
@@ -172,6 +184,7 @@ exports.getTruckLocations = async (req, res) => {
 
   const collectorIds = (await db.Collector.findAll({ where: { company_id: company.id }, attributes: ['id'] })).map((c) => c.id);
 
+  const today = new Date().toISOString().split('T')[0];
   const [collectors, pickups] = await Promise.all([
     db.Collector.findAll({
       where: { company_id: company.id, current_lat: { [Op.not]: null } },
@@ -180,7 +193,10 @@ exports.getTruckLocations = async (req, res) => {
     db.WasteRequest.findAll({
       where: {
         division_id: company.division_id,
-        status: { [Op.in]: ['pending', 'assigned', 'in_progress'] },
+        [Op.or]: [
+          { status: { [Op.in]: ['assigned', 'in_progress'] } },
+          { status: 'pending', [Op.or]: [{ scheduled_date: null }, { scheduled_date: { [Op.lte]: today } }] }
+        ],
         latitude: { [Op.not]: null },
         longitude: { [Op.not]: null }
       },

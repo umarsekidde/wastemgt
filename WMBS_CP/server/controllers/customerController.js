@@ -1,6 +1,7 @@
 const db = require('../models');
 const { Op } = require('sequelize');
 const { geocodeAddress } = require('../utils/geocode');
+const { notifyDueScheduledRequests } = require('../utils/scheduledRequests');
 
 async function getRequestsWithPaymentStatus(userId, limit) {
   const requests = await db.WasteRequest.findAll({
@@ -42,6 +43,7 @@ function serializeComplaintThread(thread) {
 
 exports.dashboard = async (req, res) => {
   try {
+    await notifyDueScheduledRequests({ customerId: req.user.id });
     const [{ requests }, payments, notifications, plans] = await Promise.all([
       getRequestsWithPaymentStatus(req.user.id, 10),
       db.Payment.findAll({ where: { user_id: req.user.id }, order: [['created_at', 'DESC']], limit: 10 }),
@@ -68,6 +70,7 @@ exports.dashboard = async (req, res) => {
 
 exports.myRequests = async (req, res) => {
   try {
+    await notifyDueScheduledRequests({ customerId: req.user.id });
     const { requests, paymentStatusByRequest } = await getRequestsWithPaymentStatus(req.user.id);
     res.render('customer/my-requests', {
       title: 'My Requests',

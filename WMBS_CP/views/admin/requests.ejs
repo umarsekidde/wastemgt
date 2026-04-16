@@ -70,6 +70,8 @@
             <thead><tr><th>ID</th><th>Customer</th><th>Address</th><th>Date</th><th>Status</th><th>Collector</th><th>Action</th></tr></thead>
             <tbody id="requestsTableBody">
               <% if (requests && requests.length) { requests.forEach(r => { %>
+                <% const todayIso = new Date().toISOString().split('T')[0]; %>
+                <% const isFuturePending = (r.status === 'pending' && r.scheduled_date && r.scheduled_date > todayIso); %>
                 <tr data-request-id="<%= r.id %>">
                   <td><%= r.id %></td>
                   <td><%= r.User ? r.User.name : '-' %></td>
@@ -78,7 +80,9 @@
                   <td><%= r.status %></td>
                   <td><%= r.Collector && r.Collector.User ? r.Collector.User.name : '-' %></td>
                   <td>
-                    <% if (r.status === 'pending' && collectors && collectors.length) { %>
+                    <% if (isFuturePending) { %>
+                      <span class="text-muted">Scheduled for <%= r.scheduled_date %></span>
+                    <% } else if (r.status === 'pending' && collectors && collectors.length) { %>
                       <select class="assign-collector form-control" style="width:150px">
                         <option value="">Assign...</option>
                         <% collectors.forEach(c => { %><option value="<%= c.id %>"><%= c.User ? c.User.name : c.id %></option><% }); %>
