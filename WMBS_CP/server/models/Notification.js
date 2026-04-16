@@ -32,7 +32,15 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true
     }
   }, {
-    tableName: 'notifications'
+    tableName: 'notifications',
+    hooks: {
+      afterCreate: async (notification) => {
+        try {
+          const pushService = require('../services/pushService');
+          await pushService.sendPushForNotification(notification, sequelize.models);
+        } catch (_) {}
+      }
+    }
   });
 
   Notification.associate = (models) => {

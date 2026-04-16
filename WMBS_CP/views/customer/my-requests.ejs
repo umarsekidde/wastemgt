@@ -139,6 +139,15 @@
   </div>
 
   <script src="/js/common.js"></script>
+  <script>
+    window.pushNotifyConfig = {
+      publicKeyEndpoint: '/customer/api/push/public-key',
+      subscribeEndpoint: '/customer/api/push/subscribe',
+      unsubscribeEndpoint: '/customer/api/push/unsubscribe',
+      serviceWorkerPath: '/sw.js'
+    };
+  </script>
+  <script src="/js/push-client.js"></script>
   <script src="/js/dashboard-ui.js"></script>
   <script src="/js/payments.js"></script>
   <script>

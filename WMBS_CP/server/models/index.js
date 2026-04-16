@@ -54,6 +54,7 @@ const modelFiles = [
   'Payment',
   'TruckLocation',
   'Notification',
+  'PushSubscription',
   'AuditLog',
   'SubscriptionPlan',
   'Complaint',
