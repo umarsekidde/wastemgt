@@ -60,7 +60,7 @@
               </div>
               <div class="chat-message chat-message-in complaint-card-head" data-open-id="<%= c.id %>">
                 <div class="chat-meta">
-                  <strong>You</strong>
+                  <strong><%= user && user.name ? user.name : 'Customer' %></strong>
                   <span>#<%= c.ticket_number || c.id %></span>
                 </div>
                 <div class="chat-subject"><%= c.subject %></div>
@@ -73,7 +73,7 @@
               <div class="complaint-thread" id="thread-<%= c.id %>">
                 <% if (c.thread && c.thread.length) { c.thread.forEach(function(msg) { %>
                   <div class="chat-message <%= msg.by === 'admin' ? 'chat-message-out' : 'chat-message-in' %>">
-                    <div class="chat-meta"><strong><%= msg.by === 'admin' ? (msg.name || 'Admin') : 'You' %></strong></div>
+                    <div class="chat-meta"><strong><%= msg.name || (msg.by === 'admin' ? 'Admin' : (user && user.name ? user.name : 'Customer')) %></strong></div>
                     <div class="chat-body"><%= msg.message %></div>
                     <div class="chat-foot">
                       <span class="chat-time"><%= msg.createdAt ? new Date(msg.createdAt).toLocaleString() : '' %></span>

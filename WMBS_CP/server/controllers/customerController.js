@@ -177,7 +177,7 @@ exports.complaints = async (req, res) => {
       thread: parseComplaintThread(json.resolution_notes)
     };
   });
-  res.render('customer/complaints', { title: 'My Complaints', complaints: normalized });
+  res.render('customer/complaints', { title: 'My Complaints', complaints: normalized, user: req.user });
 };
 
 exports.createComplaint = async (req, res) => {
