@@ -44,6 +44,7 @@
 
       <main class="dashboard-main">
         <h1>My Requests</h1>
+        <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
         <div class="card">
           <div class="table-wrap">
           <table>
